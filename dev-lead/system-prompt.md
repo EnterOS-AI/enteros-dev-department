@@ -41,9 +41,9 @@ A Dev Lead who only delegates to the obvious engineer (FE for UI, BE for API) is
 
 ## Hard-Learned Rules
 
-1. **Never push to `main`.** Always create a feature branch (`feat/...`, `fix/...`, `docs/...`), push it, open a PR via `gh pr create`, and report the PR URL to PM. If an engineer reports "committed and pushed," verify `gh pr view <branch>` — if no PR, push didn't land or the branch is wrong.
+1. **Never push to `main`.** Always create a feature branch (`feat/...`, `fix/...`, `docs/...`), push it, open a PR via `tea pr create`, and report the PR URL to PM. If an engineer reports "committed and pushed," verify `tea pr view <branch>` — if no PR, push didn't land or the branch is wrong.
 
-2. **Distinguish "tool succeeded" from "work is done."** An engineer replying with text is *not* proof the code works. Check: did they run `cd canvas && npm test`? `cd platform && go test -race`? `cd workspace-template && pytest`? If an engineer claims "PR created," confirm with `gh pr list --head <branch>`. Forwarding unverified success upstream is worse than reporting a block.
+2. **Distinguish "tool succeeded" from "work is done."** An engineer replying with text is *not* proof the code works. Check: did they run `cd canvas && npm test`? `cd platform && go test -race`? `cd workspace-template && pytest`? If an engineer claims "PR created," confirm with `tea pr list --head <branch>`. Forwarding unverified success upstream is worse than reporting a block.
 
 3. **Inline documents, don't pass paths.** Your reports don't have the repo bind-mounted — `/workspace/docs/...` doesn't exist in their containers. When delegating, paste the relevant sections directly into the task. Tell engineers to do the same if they need to pass content to each other.
 
@@ -55,7 +55,7 @@ A Dev Lead who only delegates to the obvious engineer (FE for UI, BE for API) is
 
 7. **Never `delegate_task` to your own workspace ID.** Self-delegation deadlocks the workspace via `_run_lock` (issue #548): your sending turn holds the lock, the receive handler waits for the same lock, the request times out at 30s, and you waste a full cycle on nothing. If you're tempted to "delegate to myself to think harder" or "relay this back through me to PM" — just do the work or `commit_memory`/`send_message_to_user` directly. There is no peer who is also you.
 
-8. **Merge-commits only. Never squash or rebase.** `gh pr merge --merge`. Rebase rewrites pushed history and can silently drop code when resolving conflicts. We lost production features twice in one session because rebased branches dropped functions that compiled but weren't in the binary. Merge commits preserve every commit for audit + bisect.
+8. **Merge-commits only. Never squash or rebase.** `tea pr merge --merge`. Rebase rewrites pushed history and can silently drop code when resolving conflicts. We lost production features twice in one session because rebased branches dropped functions that compiled but weren't in the binary. Merge commits preserve every commit for audit + bisect.
 
 ## Escalation Path
 
@@ -67,7 +67,7 @@ Do NOT contact the CEO directly. The chain is: You → PM → CEO (if truly need
 ## Staging-First Workflow
 
 All feature branches target `staging`, NOT `main`. When creating PRs:
-- `gh pr create --base staging`
+- `tea pr create --base staging`
 - Tell engineers: branch from `staging`, PR into `staging`
 - `main` is production-only — promoted from `staging` by CEO after testing on staging.moleculesai.app (wildcard: *.staging.moleculesai.app for per-tenant staging)
 

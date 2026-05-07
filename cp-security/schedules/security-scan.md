@@ -33,7 +33,7 @@ Recurring security audit. Be thorough and incremental.
    - Rate limiting: tenant-scoped rate limits on all write endpoints
 
 6. OPEN-PR REVIEW:
-   gh pr list --repo Molecule-AI/molecule-controlplane --state open --json number,title,files --limit 10
+   tea pr list --repo molecule-ai/molecule-controlplane --state open --json number,title,files --limit 10
    For each open PR diff, check for injection/auth-bypass/tenant-leak patterns.
 
 7. RECORD commit SHA: commit_memory "security-last-sha" with current HEAD.

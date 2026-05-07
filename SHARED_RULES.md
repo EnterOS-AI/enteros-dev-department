@@ -6,6 +6,34 @@ The four **Philosophy** sections below frame how we approach all work. Every spe
 
 ---
 
+## ⚠️ Post-2026-05-06 migration in progress (2026-05-07)
+
+The GitHub `Molecule-AI` org was suspended on 2026-05-06 and is permanently gone. Canonical SCM is now Gitea at `https://git.moleculesai.app/molecule-ai/`. Across all persona files, every `gh ...` invocation has been migrated to `tea ...` (Gitea's official CLI) or `curl` against the Gitea API for paths `tea` doesn't cover.
+
+**Tea install (run once at persona boot if not already on PATH):**
+
+```bash
+# Install tea v0.9.2 — Gitea CLI, gh-equivalent for Gitea
+if ! command -v tea >/dev/null; then
+  wget -qO /tmp/tea https://gitea.com/gitea/tea/releases/download/v0.9.2/tea-0.9.2-linux-amd64
+  chmod +x /tmp/tea && sudo mv /tmp/tea /usr/local/bin/tea
+fi
+
+# Authenticate (uses GITEA_TOKEN env var injected by workspace bootstrap; see internal#44)
+if [ -n "${GITEA_TOKEN:-}" ]; then
+  tea login add --name molecule --url https://git.moleculesai.app --token "${GITEA_TOKEN}" 2>/dev/null || true
+fi
+```
+
+**Two known limitations until follow-up issues land:**
+
+1. **`GITEA_TOKEN` env var must be present** for `tea` (and `curl` calls) to authenticate. Tracked: [`internal#44`](https://git.moleculesai.app/molecule-ai/internal/issues/44) (workspace-bootstrap injection). Until that lands, the migrated `tea ...` calls will fail with auth errors. Public-repo reads (e.g. `tea repos ls --org molecule-ai`) work without a token; private-repo + write operations (PR create / merge / issue create) need the token.
+2. **`tea` is per-job-installed**, not pre-baked into the runner image (per orchestrator's Q2 decision: act_runner image is mid-stabilization, pre-bake parked for image-v2 work). The install snippet above runs at persona boot.
+
+**`gh ...` in this file** (and across all persona files) has been substituted to `tea ...` mechanically. If you find a `gh ...` reference that wasn't caught, file an addition under the parent issue [`internal#45`](https://git.moleculesai.app/molecule-ai/internal/issues/45).
+
+---
+
 ## Philosophy 1 — Diagnosis Is the Deliverable, Not Just the Fix
 
 A bug fix patches the symptom. Diagnosis explains why this class of bug was possible.
@@ -55,8 +83,12 @@ The `Molecule-AI/internal` repo is the team's durable memory: `PLAN.md` (roadmap
 Before any non-trivial decision (filing an issue, starting a refactor, claiming a phase exists, escalating a "novel" problem, beginning a new plan), search the team's memory:
 
 ```
-gh search code --repo Molecule-AI/internal "<keywords>"
-gh api repos/Molecule-AI/internal/contents/<area>/ --jq '.[].name'
+# Code search: tea has no direct equivalent for `gh search code` — clone + grep is the durable replacement
+test -d /tmp/internal || tea repo clone molecule-ai/internal /tmp/internal
+grep -rE "<keywords>" /tmp/internal --include="*.md"
+
+# Or list contents of an area directly via Gitea API
+curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/molecule-ai/internal/contents/<area>/ --jq '.[].name'
 ```
 
 If the topic is in `internal/`, read it — your past selves and peer agents have already worked on it. If it isn't, your work belongs there *afterwards*.
@@ -162,7 +194,7 @@ are now **CI-blocked** — your PR will fail with a clear error if you try:
 ```bash
 # One-time clone (idempotent)
 mkdir -p ~/repos
-test -d ~/repos/internal || gh repo clone Molecule-AI/internal ~/repos/internal
+test -d ~/repos/internal || tea repo clone molecule-ai/internal ~/repos/internal
 
 cd ~/repos/internal
 git pull origin main
@@ -172,7 +204,7 @@ $EDITOR <area>/<slug>.md                      # write your content
 git add <area>/<slug>.md
 git commit -m "<area>: add <slug>"
 git push -u origin HEAD
-gh pr create --base main --fill
+tea pr create --base main --fill
 ```
 
 The friction here is intentional. Public space and internal space are
@@ -277,13 +309,13 @@ This is required because the team shares one GitHub App identity (`molecule-ai[b
 
 **PM does NOT merge.** PM does top-level decisions, CEO comms (Telegram, max 2-3/day), task distribution, and big-picture monitoring. If a merge decision needs PM input, the Lead asks via `delegate_task` — PM responds with a directional decision, the Lead executes the merge.
 
-If you're an engineer and find yourself wanting to run `gh pr merge`, stop and ask your Lead.
+If you're an engineer and find yourself wanting to run `tea pr merge`, stop and ask your Lead.
 
 ## PR Merge Approval Gate
 
-Before a Lead runs `gh pr merge`, **all four** of these must be on the PR:
+Before a Lead runs `tea pr merge`, **all four** of these must be on the PR:
 
-1. **All required CI checks green** — `gh pr checks <N>` shows every gating check passing
+1. **All required CI checks green** — `tea pr checks <N>` shows every gating check passing
 2. **`[qa-agent] APPROVED`** — QA Engineer ran tests and reports clean (or `[qa-agent] N/A — docs only` waiver)
 3. **`[security-auditor-agent] APPROVED`** — Security Auditor reviewed for CWE classes (or `N/A — pure docs/marketing` waiver)
 4. **`[uiux-agent] APPROVED`** — UIUX Designer reviewed any canvas/UI changes (or `N/A — backend-only` waiver)
@@ -301,7 +333,7 @@ For high-blast-radius PRs (auth, billing, schema migrations, data deletion), the
 Your workspace only has the secrets your role needs. See [SECRETS_MATRIX.md](./SECRETS_MATRIX.md) for the full table.
 
 Examples:
-- Engineers have `GH_TOKEN` scoped to PR-author — `gh pr create` works, `gh pr merge` does not
+- Engineers have `GH_TOKEN` scoped to PR-author — `tea pr create` works, `tea pr merge` does not
 - Marketing Lead has LinkedIn + X API keys; other marketing roles draft via PRs
 - PM has the `TELEGRAM_BOT_TOKEN` for CEO comms; nobody else does
 - Production AWS/Fly/Vercel keys live ONLY in DevOps/SRE/Infra-Runtime-BE workspaces
@@ -328,7 +360,7 @@ Never escalate up two levels. Never sideways-escalate (Lead → Lead). Never inv
 When you wake up (cron tick or A2A delegation), check for queued work in priority order:
 
 1. **Direct A2A delegation** — finish first
-2. **Your label-scoped issue queue:** `gh issue list --repo Molecule-AI/molecule-core --state open --label "area:<your-role>" --label "needs-work"`
+2. **Your label-scoped issue queue:** `tea issue list --repo molecule-ai/molecule-core --state open --label "area:<your-role>" --label "needs-work"`
 3. **Generic backlog claim** — issues labeled `needs-work` with no `area:*` label that match your skill set
 4. **Idle prompt** — only if 1+2+3 all returned nothing
 
@@ -414,7 +446,7 @@ Your idle-prompt cron should include a step:
 
 ```bash
 # Check internal PRs from your workers
-gh pr list --repo Molecule-AI/internal --state open \
+tea pr list --repo molecule-ai/internal --state open \
   --json number,title,author,createdAt \
   --jq '.[] | select(.author.login != "app/molecule-ai" or .title | test("<my-worker-role>")) | "#\(.number) \(.title)"'
 ```

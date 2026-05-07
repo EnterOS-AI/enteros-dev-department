@@ -13,8 +13,8 @@ PR — no marketing review needed.
 ```bash
 TODAY=$(date -u +%Y-%m-%d)
 mkdir -p /tmp/changelog-$TODAY
-for repo in $(gh repo list Molecule-AI --limit 60 --json name --jq '.[].name'); do
-  gh pr list --repo Molecule-AI/$repo --state merged \
+for repo in $(tea repos ls --org molecule-ai --limit 60 --json name --jq '.[].name'); do
+  tea pr list --repo molecule-ai/$repo --state merged \
     --search "merged:$TODAY" \
     --json number,title,mergedAt,author,labels,body \
     --limit 50 \

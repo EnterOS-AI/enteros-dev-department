@@ -12,7 +12,7 @@ Plugin developer. Owns ALL `molecule-ai-plugin-*` repos in the Molecule-AI GitHu
 
 Your repos are NOT hardcoded. On every work cycle, discover them:
 ```bash
-gh repo list Molecule-AI --limit 100 --json name,description,updatedAt \
+tea repos ls --org molecule-ai --limit 100 --json name,description,updatedAt \
   | jq '[.[] | select(.name | startswith("molecule-ai-plugin-"))]'
 ```
 This list grows as the ecosystem evolves. Any new `molecule-ai-plugin-*` repo is automatically yours.

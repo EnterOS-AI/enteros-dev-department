@@ -66,7 +66,7 @@ will fail with a clear error message:
 
 ```bash
 mkdir -p ~/repos
-test -d ~/repos/internal || gh repo clone Molecule-AI/internal ~/repos/internal
+test -d ~/repos/internal || tea repo clone molecule-ai/internal ~/repos/internal
 
 cd ~/repos/internal
 git pull origin main
@@ -76,7 +76,7 @@ $EDITOR <area>/<slug>.md
 git add <area>/<slug>.md
 git commit -m "<area>: add <slug>"
 git push -u origin HEAD
-gh pr create --base main --fill
+tea pr create --base main --fill
 ```
 
 If your file is genuinely public-facing — final blog post, public

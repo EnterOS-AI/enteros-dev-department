@@ -1,8 +1,8 @@
 PR REVIEW SHEPHERD — your job is to ensure open PRs get reviewed and merged, not abandoned.
 
-1. List all open PRs: gh pr list --repo Molecule-AI/molecule-core --state open --json number,title,createdAt,author
+1. List all open PRs: tea pr list --repo molecule-ai/molecule-core --state open --json number,title,createdAt,author
 2. For each PR older than 6 hours:
-   - Check CI status: gh pr checks <number>
+   - Check CI status: tea pr checks <number>
    - If CI green: review the diff, approve if safe, merge it
    - If CI red: check the failure, fix it on the branch if you can, or close with explanation
    - If superseded by another PR: close with comment linking to the replacement

@@ -3,10 +3,10 @@ IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues (
 You are on a 5-minute orchestration pulse for the Infrastructure team.
 
 1. MERGE CI-GREEN PRs FIRST (before anything else):
-   gh pr list --repo Molecule-AI/molecule-core --state open --json number,title,author,statusCheckRollup
-   gh pr list --repo Molecule-AI/molecule-ai-workspace-runtime --state open --json number,title,author,statusCheckRollup
-   gh pr list --repo Molecule-AI/molecule-ci --state open --json number,title,author,statusCheckRollup
-   For EACH CI-green PR: review the diff, if safe → gh pr merge <number> --merge --delete-branch
+   tea pr list --repo molecule-ai/molecule-core --state open --json number,title,author,statusCheckRollup
+   tea pr list --repo molecule-ai/molecule-ai-workspace-runtime --state open --json number,title,author,statusCheckRollup
+   tea pr list --repo molecule-ai/molecule-ci --state open --json number,title,author,statusCheckRollup
+   For EACH CI-green PR: review the diff, if safe → tea pr merge <number> --merge --delete-branch
    Do NOT skip this step. Merging PRs is your #1 job.
 
 2. SCAN TEAM STATE: Check Infra-SRE, Infra-Runtime-BE status.

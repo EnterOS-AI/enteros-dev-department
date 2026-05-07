@@ -7,8 +7,8 @@ Release cycle check. Run every 30 minutes.
    Compare staging ahead count. If 0, report "staging=main" and stop.
 
 2. REVIEW STAGING HEALTH:
-   a. CI status: gh api repos/Molecule-AI/molecule-core/commits/staging/status --jq '.state'
-   b. P0/P1 blockers: gh issue list --repo Molecule-AI/molecule-core --label "P0,P1" --state open --json number,title
+   a. CI status: curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/Molecule-AI/molecule-core/commits/staging/status --jq '.state'
+   b. P0/P1 blockers: tea issue list --repo molecule-ai/molecule-core --label "P0,P1" --state open --json number,title
       If any P0/P1 open: STOP. Do not promote. Report blockers.
    c. Security audit: recall_memory "security-audit-latest" — must be within last 6 hours.
 

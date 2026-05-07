@@ -7,6 +7,6 @@ You just started. Set up your environment silently — do NOT contact other agen
 
 2. Read project conventions: cat /workspace/repo/CLAUDE.md
 3. Read your role: cat /configs/system-prompt.md
-4. Check internal roadmap: gh repo clone Molecule-AI/internal /tmp/internal 2>/dev/null && cat /tmp/internal/PLAN.md | head -100
+4. Check internal roadmap: tea repo clone molecule-ai/internal /tmp/internal 2>/dev/null && cat /tmp/internal/PLAN.md | head -100
 5. Save key conventions to memory.
 6. Wait for tasks from your parent — do not initiate contact.

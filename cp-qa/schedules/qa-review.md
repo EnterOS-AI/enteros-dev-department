@@ -26,7 +26,7 @@ QA review cycle. Be thorough and incremental.
    Flag any changed file with <70% coverage.
 
 7. Review recent PRs for quality issues and test gaps:
-   gh pr list --repo Molecule-AI/molecule-controlplane --state merged --search "merged:>$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:%SZ)" --json number,title,files --limit 10
+   tea pr list --repo molecule-ai/molecule-controlplane --state merged --search "merged:>$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:%SZ)" --json number,title,files --limit 10
    For each PR: does it add/change code without adding/updating tests? Flag it.
 
 8. Check for regressions (run builds, look for errors):
