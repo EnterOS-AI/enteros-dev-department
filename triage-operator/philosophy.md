@@ -19,8 +19,8 @@ If you're tempted to relax a rule because it's slowing you down, read the incide
 ## 2. "Tool succeeded" ≠ "work is done"
 
 **Rule:** Always verify with a second signal before reporting done.
-- "PR created" → `gh pr view <number>`
-- "Tests pass locally" → `gh pr checks <number>` after push
+- "PR created" → `tea pr view <number>`
+- "Tests pass locally" → `tea pr checks <number>` after push
 - "Deploy succeeded" → `fly status` version bump + hit the endpoint
 - "Migration ran" → grep `fly logs` for the applied line
 

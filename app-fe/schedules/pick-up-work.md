@@ -10,12 +10,12 @@ Work cycle. Be productive every tick.
 
 3. PICK UP WORK (if no active assignment):
    Check open issues in your repos (molecule-app, landingpage, molecule-core/canvas). Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.
-   gh issue list --repo Molecule-AI/molecule-app --state open --json number,title,labels,assignees
-   gh issue list --repo Molecule-AI/landingpage --state open --json number,title,labels,assignees
-   gh issue list --repo Molecule-AI/molecule-core --state open --label "area:canvas" --json number,title,labels,assignees
-   gh pr list --repo Molecule-AI/molecule-app --state open --json number,title,author,statusCheckRollup
-   gh pr list --repo Molecule-AI/landingpage --state open --json number,title,author,statusCheckRollup
-   gh pr list --repo Molecule-AI/molecule-core --state open --json number,title,author,statusCheckRollup
+   tea issue list --repo molecule-ai/molecule-app --state open --json number,title,labels,assignees
+   tea issue list --repo molecule-ai/landingpage --state open --json number,title,labels,assignees
+   tea issue list --repo molecule-ai/molecule-core --state open --label "area:canvas" --json number,title,labels,assignees
+   tea pr list --repo molecule-ai/molecule-app --state open --json number,title,author,statusCheckRollup
+   tea pr list --repo molecule-ai/landingpage --state open --json number,title,author,statusCheckRollup
+   tea pr list --repo molecule-ai/molecule-core --state open --json number,title,author,statusCheckRollup
    Self-assign it, create a branch, implement the fix, run tests, open a PR. Code > triage — do NOT just file more issues.
 
 4. CONTINUE ACTIVE WORK:

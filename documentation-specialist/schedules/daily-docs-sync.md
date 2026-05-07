@@ -14,7 +14,7 @@ SETUP:
 
 1a. PAIR RECENT PLATFORM PRS (last 24h):
    cd /workspace/repo
-   gh pr list --repo Molecule-AI/molecule-monorepo --state merged \
+   tea pr list --repo molecule-ai/molecule-monorepo --state merged \
      --search "merged:>$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)" \
      --json number,title,files
    For each merged PR that touches a public surface
@@ -29,7 +29,7 @@ SETUP:
 
 1b. PAIR RECENT CONTROLPLANE PRS (last 24h):
    cd /workspace/controlplane
-   gh pr list --repo Molecule-AI/molecule-controlplane --state merged \
+   tea pr list --repo molecule-ai/molecule-controlplane --state merged \
      --search "merged:>$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)" \
      --json number,title,files
    ⚠️  PRIVATE REPO. Two cases:

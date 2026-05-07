@@ -17,7 +17,7 @@ echo "Window: $LAST_TICK → $NOW_TS"
 ## 2. ENUMERATE every Molecule-AI repo (live list, don't trust the prior cache)
 
 ```bash
-gh repo list Molecule-AI --limit 60 --json name,description,updatedAt,visibility \
+tea repos ls --org molecule-ai --limit 60 --json name,description,updatedAt,visibility \
   > /tmp/org-repos.json
 ```
 
@@ -28,7 +28,7 @@ worth scanning. (Skipping idle repos keeps the cycle bounded.)
 
 For each repo with recent activity:
 ```bash
-gh pr list --repo Molecule-AI/<repo> --state merged \
+tea pr list --repo molecule-ai/<repo> --state merged \
   --search "merged:>=${LAST_TICK}" \
   --json number,title,mergedAt,files \
   --limit 20
@@ -126,7 +126,7 @@ commit_memory(
    - ecosystem-watch.md, ecosystem-research-outcomes.md — sync with Research Lead outputs.
 
    Every 2h check:
-   gh pr list --repo Molecule-AI/internal --state open --json number,title
-   gh api repos/Molecule-AI/internal/commits --jq '.[0:3] | .[] | "\(.sha[:8]) \(.commit.message | split("\n") | first)"'
+   tea pr list --repo molecule-ai/internal --state open --json number,title
+   curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/Molecule-AI/internal/commits --jq '.[0:3] | .[] | "\(.sha[:8]) \(.commit.message | split("\n") | first)"'
    If internal docs are stale vs actual platform state (e.g. still reference Fly.io), open a PR to fix.
    NEVER copy internal content to public repos (molecule-core, docs). Privacy rule applies.

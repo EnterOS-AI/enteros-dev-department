@@ -2,7 +2,7 @@ Plugin ecosystem audit. Run this EVERY cycle — you own every molecule-ai-plugi
 
 ## Step 1: Discover all plugin repos (NEVER use a hardcoded list)
 ```bash
-gh repo list Molecule-AI --limit 100 --json name,updatedAt \
+tea repos ls --org molecule-ai --limit 100 --json name,updatedAt \
   | jq -r '.[] | select(.name | startswith("molecule-ai-plugin-")) | "\(.name) \(.updatedAt)"' \
   | sort
 ```
@@ -13,13 +13,13 @@ For each plugin repo discovered above:
 ```bash
 REPO="Molecule-AI/<name>"
 # CI status
-gh run list --repo $REPO --limit 1 --json conclusion,createdAt
+tea action list --repo $REPO --limit 1 --json conclusion,createdAt
 # Open issues
-gh issue list --repo $REPO --state open --json number,title --limit 5
+tea issue list --repo $REPO --state open --json number,title --limit 5
 # Open PRs
-gh pr list --repo $REPO --state open --json number,title --limit 5
+tea pr list --repo $REPO --state open --json number,title --limit 5
 # Last commit age
-gh api repos/$REPO/commits?per_page=1 --jq '.[0].commit.committer.date'
+curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/$REPO/commits?per_page=1 --jq '.[0].commit.committer.date'
 ```
 
 ## Step 3: Triage and act

@@ -12,9 +12,9 @@ The platform supports per-workspace `.env` files (loaded by `org_import.go` and 
 |---|---|---|
 | **All workspaces** (org-root `.env`) | `CLAUDE_CODE_OAUTH_TOKEN` (or model-specific equivalent: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) | Run the LLM. Required for any agent to think. |
 | **PM** | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (CEO comms only) | Send Telegram messages to CEO. Max 2-3/day per SHARED_RULES rule 11. |
-| **Dev Lead, Core Lead, App Lead, CP Lead, Infra Lead, SDK Lead** | `GH_TOKEN` (write) | `gh pr merge`, `gh issue close`, `gh pr review --approve` on the team's repo. SHARED_RULES rule 9: Leads merge in their domain. |
+| **Dev Lead, Core Lead, App Lead, CP Lead, Infra Lead, SDK Lead** | `GH_TOKEN` (write) | `tea pr merge`, `tea issue close`, `tea pr review --approve` on the team's repo. SHARED_RULES rule 9: Leads merge in their domain. |
 | **Triage Operator** | `GH_TOKEN` (write, org-wide) | Cross-org triage: close stale, label, escalate. May merge mechanical PRs only. |
-| **Engineers** (Backend, Frontend, Full-stack, DevOps, Platform, SRE, etc.) | `GH_TOKEN` with **PR-author scope only** — can `gh pr create`, `gh issue create`, `gh pr comment`. **Cannot merge.** | Raise PRs and respond to review comments. Per SHARED_RULES rule 9: engineers don't merge. |
+| **Engineers** (Backend, Frontend, Full-stack, DevOps, Platform, SRE, etc.) | `GH_TOKEN` with **PR-author scope only** — can `tea pr create`, `tea issue create`, `tea pr comment`. **Cannot merge.** | Raise PRs and respond to review comments. Per SHARED_RULES rule 9: engineers don't merge. |
 | **QA Engineer** | `GH_TOKEN` (PR-comment scope) | Run tests + post `[qa-agent] APPROVED` / `CHANGES REQUESTED` comments. Required gate per rule 10. |
 | **Security Auditor, Offensive Security Engineer** | `GH_TOKEN` (PR-comment scope) | Post `[security-auditor-agent] APPROVED` / `CHANGES REQUESTED`. Required gate per rule 10. |
 | **UIUX Designer** | `GH_TOKEN` (PR-comment scope) | Post `[uiux-agent] APPROVED` / `CHANGES REQUESTED`. Required gate per rule 10. |

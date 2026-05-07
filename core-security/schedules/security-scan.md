@@ -10,7 +10,7 @@ Recurring security audit. Be thorough and incremental.
 2. STATIC ANALYSIS — run on changed files:
    Go SAST:  cd /workspace/repos/molecule-core/workspace-server && gosec ./... 2>&1 | head -50
    Python:   cd /workspace/repos/molecule-core/workspace && bandit -r . 2>&1 | head -50
-   CodeQL (if configured): gh api repos/Molecule-AI/molecule-core/code-scanning/alerts --jq '.[0:5]'
+   CodeQL (if configured): curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/Molecule-AI/molecule-core/code-scanning/alerts --jq '.[0:5]'
 
 3. SECRETS SCAN — check for hardcoded credentials:
    cd /workspace/repos/molecule-core
@@ -35,7 +35,7 @@ Recurring security audit. Be thorough and incremental.
    Teardown any DAST tooling after checks complete.
 
 7. OPEN-PR REVIEW:
-   gh pr list --repo Molecule-AI/molecule-core --state open --json number,title,files --limit 10
+   tea pr list --repo molecule-ai/molecule-core --state open --json number,title,files --limit 10
    For each open PR diff, check for injection/exec/unsafe patterns.
 
 8. RECORD commit SHA: commit_memory "security-last-sha" with current HEAD.

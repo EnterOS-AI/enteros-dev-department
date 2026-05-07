@@ -21,13 +21,13 @@ Never skip Step 0. The cron-learnings file is your primary "what did past-me alr
 ## Step 1 — List state
 
 ```bash
-gh pr list --repo Molecule-AI/molecule-monorepo --state open \
+tea pr list --repo molecule-ai/molecule-monorepo --state open \
   --json number,title,author,isDraft,mergeable,statusCheckRollup,files
 
-gh pr list --repo Molecule-AI/molecule-controlplane --state open \
+tea pr list --repo molecule-ai/molecule-controlplane --state open \
   --json number,title,author,isDraft,mergeable
 
-gh issue list --repo Molecule-AI/molecule-monorepo --state open \
+tea issue list --repo molecule-ai/molecule-monorepo --state open \
   --json number,title,assignees,labels
 ```
 
@@ -41,10 +41,10 @@ For each open PR:
 
 ### Gate 1 — CI
 
-`gh pr checks <N>`. All green? Proceed. Any fail or cancel? Investigate.
+`tea pr checks <N>`. All green? Proceed. Any fail or cancel? Investigate.
 
-- **Cancelled** = superseded by a newer push; rerun via `gh run rerun` if needed.
-- **Failed** = read the log (`gh run view <runId> --log-failed`). If the failure is mechanical (lint, import order, flaky fixture), go to Step 2a. If it caught a real bug, go to Step 2d.
+- **Cancelled** = superseded by a newer push; rerun via `tea action rerun` if needed.
+- **Failed** = read the log (`tea action view <runId> --log-failed`). If the failure is mechanical (lint, import order, flaky fixture), go to Step 2a. If it caught a real bug, go to Step 2d.
 
 ### Gate 2 — Build
 
@@ -79,12 +79,12 @@ If the PR touches `canvas/src/**/*.tsx`, run `cd canvas && npm test` locally (or
 If the fix is truly mechanical:
 
 ```bash
-gh pr checkout <N>
+tea pr checkout <N>
 # make the fix
 git add <files>
 git commit -m "fix(gate-N): <what you fixed>"
 git push
-gh run watch
+tea action watch
 ```
 
 Wait for CI. If green, proceed to Step 2b. If still red, you misdiagnosed — back out your change, leave a comment explaining what's wrong, let the author fix it.
@@ -94,7 +94,7 @@ Wait for CI. If green, proceed to Step 2b. If still red, you misdiagnosed — ba
 All 7 gates pass + 0 🔴 from code-review + (for noteworthy PRs) cross-vendor-review agreement + (if auth/billing/schema/data-deletion) explicit CEO approval in the chat:
 
 ```bash
-gh pr merge <N> --merge --delete-branch
+tea pr merge <N> --merge --delete-branch
 ```
 
 Never `--squash`, never `--rebase`, never `--admin` bypassing checks.
@@ -164,12 +164,12 @@ Plugin needs to exist before you can wire it. Migration needs to exist before yo
 If all 6 pass:
 
 ```bash
-gh issue edit <N> --add-assignee @me
+tea issue edit <N> --add-assignee @me
 git checkout -b fix/issue-<N>-<short-slug>
 # implement + test
 git commit -m "fix: <what>\n\nCloses #<N>"
 git push -u origin fix/issue-<N>-<short-slug>
-gh pr create --draft
+tea pr create --draft
 ```
 
 Then run `llm-judge` skill against the issue body + PR diff. Score ≥ 4 → mark ready for review. Score ≤ 2 → stay draft, leave a note for yourself in the PR body.

@@ -11,9 +11,9 @@ Work cycle. Be productive every tick.
 3. PICK UP WORK (if no active assignment):
    Check open issues in your repos (all molecule-ai-plugin-* repos, molecule-core/plugins). Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.
    gh search issues --owner Molecule-AI "molecule-ai-plugin" --state open --json repository,number,title,labels,assignees
-   gh issue list --repo Molecule-AI/molecule-core --state open --label "area:plugins" --json number,title,labels,assignees
+   tea issue list --repo molecule-ai/molecule-core --state open --label "area:plugins" --json number,title,labels,assignees
    gh search prs --owner Molecule-AI "molecule-ai-plugin" --state open --json repository,number,title,author
-   gh pr list --repo Molecule-AI/molecule-core --state open --json number,title,author,statusCheckRollup
+   tea pr list --repo molecule-ai/molecule-core --state open --json number,title,author,statusCheckRollup
    Self-assign it, create a branch, implement the fix, run tests, open a PR. Code > triage — do NOT just file more issues.
 
 4. CONTINUE ACTIVE WORK:
