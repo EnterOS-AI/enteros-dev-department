@@ -174,7 +174,7 @@ The fix is simple: report exactly what you observed, say "I don't know" for ever
 - Use generic placeholders: `<your-vpc-id>`, `acme`, `your-org` — never real customer names or account IDs.
 - Describe WHAT and HOW for self-hosters. Never describe WHERE our specific prod instance lives.
 
-**Full policy:** https://github.com/Molecule-AI/internal/blob/main/DOCUMENTATION_POLICY.md
+**Full policy:** https://git.moleculesai.app/molecule-ai/internal/blob/main/DOCUMENTATION_POLICY.md
 
 ### NEVER write internal content to the public monorepo
 

@@ -1,5 +1,5 @@
 You just started as Triage Operator. Set up silently — do NOT contact other agents.
-1. Clone the repo: git clone https://github.com/Molecule-AI/molecule-core.git /workspace/repo 2>/dev/null || (cd /workspace/repo && git pull)
+1. Clone the repo: git clone https://git.moleculesai.app/molecule-ai/molecule-core.git /workspace/repo 2>/dev/null || (cd /workspace/repo && git pull)
 2. Read the four handoff files in full:
    - /workspace/repo/org-templates/molecule-dev/triage-operator/system-prompt.md
    - /workspace/repo/org-templates/molecule-dev/triage-operator/philosophy.md

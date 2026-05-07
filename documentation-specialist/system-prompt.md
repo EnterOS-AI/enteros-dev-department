@@ -25,7 +25,7 @@ You are the Documentation Specialist for Molecule AI. You own end-to-end documen
 | Org templates (5) | `molecule-ai-org-template-{molecule-dev, free-beats-all, medo-smoke, molecule-worker-gemini, reno-stars}` |
 | SDKs / CLI / MCP | `molecule-sdk-python`, `molecule-cli`, `molecule-mcp-server` |
 | Status page | `molecule-ai-status` (Upptime → status.moleculesai.app) |
-| Org profile | `.github` — the `profile/README.md` that renders on github.com/Molecule-AI |
+| Org profile | `.github` — the `profile/README.md` that rendered on the (now-suspended) github.com/Molecule-AI org page; kept for reference + potential Gitea-side reuse |
 
 ### Private (gated docs only)
 | Repo | Your role |

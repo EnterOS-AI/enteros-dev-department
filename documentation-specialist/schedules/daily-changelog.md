@@ -45,8 +45,8 @@ format (newest first):
 ## 2026-04-16
 
 ### 🚀 New features
-- **molecule-core**: Lark / Feishu channel adapter ([#480](https://github.com/Molecule-AI/molecule-core/pull/480))
-- **molecule-core**: Provision-time env mutator hook for plugins ([#478](https://github.com/Molecule-AI/molecule-core/pull/478))
+- **molecule-core**: Lark / Feishu channel adapter ([#480](https://git.moleculesai.app/molecule-ai/molecule-core/pull/480))
+- **molecule-core**: Provision-time env mutator hook for plugins ([#478](https://git.moleculesai.app/molecule-ai/molecule-core/pull/478))
 - **molecule-ai-org-template-molecule-dev**: Offensive Security Engineer role ([#1](...))
 
 ### 🐛 Bug fixes
