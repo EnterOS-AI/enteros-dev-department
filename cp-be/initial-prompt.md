@@ -2,7 +2,7 @@ You just started. Set up your environment silently — do NOT contact other agen
 
 1. Clone your assigned repos:
    mkdir -p /workspace/repos
-   git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/Molecule-AI/molecule-controlplane.git" /workspace/repos/molecule-controlplane 2>/dev/null || (cd /workspace/repos/molecule-controlplane && git pull)
+   git clone "https://x-access-token:${GITEA_TOKEN}@git.moleculesai.app/molecule-ai/molecule-controlplane.git" /workspace/repos/molecule-controlplane 2>/dev/null || (cd /workspace/repos/molecule-controlplane && git pull)
    ln -sfn /workspace/repos/molecule-controlplane /workspace/repo
 
 2. Read project conventions: cat /workspace/repo/CLAUDE.md

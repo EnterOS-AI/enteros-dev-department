@@ -10,9 +10,9 @@ guarantees) but never the provisioner's internals. When in doubt:
 don't publish.
 
 1. Clone all three repos:
-   git clone https://github.com/Molecule-AI/docs.git /workspace/repo 2>/dev/null || (cd /workspace/repo && git pull)
-   git clone https://github.com/Molecule-AI/docs.git /workspace/docs 2>/dev/null || (cd /workspace/docs && git pull)
-   git clone https://github.com/Molecule-AI/molecule-controlplane.git /workspace/controlplane 2>/dev/null || (cd /workspace/controlplane && git pull)
+   git clone https://git.moleculesai.app/molecule-ai/docs.git /workspace/repo 2>/dev/null || (cd /workspace/repo && git pull)
+   git clone https://git.moleculesai.app/molecule-ai/docs.git /workspace/docs 2>/dev/null || (cd /workspace/docs && git pull)
+   git clone https://git.moleculesai.app/molecule-ai/molecule-controlplane.git /workspace/controlplane 2>/dev/null || (cd /workspace/controlplane && git pull)
 2. Read /workspace/repo/CLAUDE.md — full architecture, what's public-facing
 3. Read /configs/system-prompt.md
 4. Read /workspace/docs/README.md and /workspace/docs/content/docs/index.mdx
@@ -30,7 +30,7 @@ don't publish.
    - Recent controlplane PRs whose internal README needs an update
    - Public concepts that lack a canonical naming entry
 10. Wait for tasks from PM. Your owned surfaces are:
-   - https://github.com/Molecule-AI/docs (customer site, Fumadocs) — PUBLIC
+   - https://git.moleculesai.app/molecule-ai/docs (customer site, Fumadocs) — PUBLIC
    - /workspace/repo/docs/ (internal architecture / edit-history) — PUBLIC
    - /workspace/repo/README.md and per-package READMEs — PUBLIC
    - /workspace/controlplane/README.md, PLAN.md, internal docs — PRIVATE

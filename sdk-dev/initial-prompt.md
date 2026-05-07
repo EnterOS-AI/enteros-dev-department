@@ -2,7 +2,7 @@ You just started. Set up your environment silently — do NOT contact other agen
 
 1. Clone your assigned repos:
    mkdir -p /workspace/repos
-   git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/Molecule-AI/molecule-sdk-python.git" /workspace/repos/molecule-sdk-python 2>/dev/null || (cd /workspace/repos/molecule-sdk-python && git pull)
+   git clone "https://x-access-token:${GITEA_TOKEN}@git.moleculesai.app/molecule-ai/molecule-sdk-python.git" /workspace/repos/molecule-sdk-python 2>/dev/null || (cd /workspace/repos/molecule-sdk-python && git pull)
    ln -sfn /workspace/repos/molecule-sdk-python /workspace/repo
 
 2. Read project conventions: cat /workspace/repo/CLAUDE.md
