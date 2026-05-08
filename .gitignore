@@ -1,0 +1,19 @@
+# Per-workspace secrets — populated at platform-import time, never committed.
+# Each workspace's .env.example is the contract for what it expects.
+**/.env
+
+# Editor + OS noise
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Python validator scratch
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local scratch
+*.bak
+*.orig
+*.rej

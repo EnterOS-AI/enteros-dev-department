@@ -1,0 +1,6 @@
+# Force LF on shell + Python + YAML — Linux containers choke on \r\n
+*.sh   text eol=lf
+*.py   text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.md   text eol=lf

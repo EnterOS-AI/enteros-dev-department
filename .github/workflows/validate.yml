@@ -1,0 +1,45 @@
+# Gitea Actions CI gate: run the tree validator on every PR + push.
+#
+# The validator catches: orphan workspace folders, cross-tree `..`
+# traversal in children: paths, duplicate parent claims, missing
+# workspace.yaml, generic !include errors.
+#
+# Refs: internal#77 (Phase 3b — task #223).
+
+name: Validate dev-department tree
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate tree
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          # We don't follow submodules. The dev-department subtree is
+          # self-contained; cross-repo composition is verified at the
+          # parent-template's CI level (internal#77 Phase 4).
+          submodules: false
+
+      - uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55  # v5.5.0
+        with:
+          python-version: '3.11'
+
+      - name: Install PyYAML
+        run: python -m pip install --no-input --disable-pip-version-check pyyaml==6.0.1
+
+      - name: Run validator
+        run: |
+          chmod +x .molecule-ci/scripts/validate-tree.py
+          .molecule-ci/scripts/validate-tree.py
