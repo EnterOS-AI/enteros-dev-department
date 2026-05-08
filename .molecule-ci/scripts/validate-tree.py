@@ -44,6 +44,38 @@ import sys
 from pathlib import Path
 from typing import Any
 
+
+def _abs_no_symlink_resolve(p: Path) -> Path:
+    """Return absolute path WITHOUT following symlinks. Mirrors Go's
+    filepath.Abs (which is path-string only — does not call EvalSymlinks).
+
+    This matters for cross-repo composition: parent template's
+    `dev-lead → ../sibling-repo/dev-lead/` symlink. The platform's
+    resolveYAMLIncludes (workspace-server/internal/handlers/org_include.go)
+    uses filepath.Abs/Rel for the in-root security check, so a path that
+    string-resolves to inside-root passes — even if the symlink target
+    lives outside. The actual file-read follows the symlink at OS layer
+    via os.ReadFile.
+
+    Path.resolve() in Python's stdlib follows symlinks (it's like
+    realpath), which would reject the cross-repo case as "outside root".
+    Use this helper everywhere we mirror the Go security check; reserve
+    Path.resolve() for places we actually want realpath behavior."""
+    return Path(os.path.abspath(p))
+
+
+def _is_inside_root(target: Path, root: Path) -> bool:
+    """Path-string check: is `target` lexically inside `root`?
+    Mirrors Go's filepath.Rel + HasPrefix idiom from
+    resolveInsideRoot in workspace-server."""
+    target_abs = _abs_no_symlink_resolve(target)
+    root_abs = _abs_no_symlink_resolve(root)
+    try:
+        target_abs.relative_to(root_abs)
+    except ValueError:
+        return False
+    return True
+
 try:
     import yaml  # PyYAML
 except ImportError:
@@ -130,12 +162,13 @@ def _walk_workspace_node(
     # !include sentinel.
     if isinstance(node, dict) and "__include__" in node:
         rel = node["__include__"]
-        target = (yaml_dir / rel).resolve()
-        try:
-            target.relative_to(repo_root.resolve())
-        except ValueError:
+        # Path-string in-root check (mirrors Go filepath.Abs/Rel — does
+        # NOT follow symlinks at this layer, so cross-repo symlinks like
+        # parent's dev-lead → ../molecule-dev-department/dev-lead/ pass).
+        target = _abs_no_symlink_resolve(yaml_dir / rel)
+        if not _is_inside_root(target, repo_root):
             report.errors.append(
-                f"!include {rel!r} (from {yaml_dir.name}) resolves outside repo root: {target}"
+                f"!include {rel!r} (from {yaml_dir.name}) escapes repo root (path-string check): {target}"
             )
             return
         if not target.exists():
@@ -156,17 +189,18 @@ def _walk_workspace_node(
         #      no workspace.yaml) — recurse without registering.
         child_folder: str | None = None
         if target.name == "workspace.yaml":
-            child_folder = str(target.parent.resolve().relative_to(repo_root.resolve()))
+            # parent dir as a path STRING (no symlink follow) relative to repo root.
+            parent_abs = _abs_no_symlink_resolve(target.parent)
+            child_folder = str(parent_abs.relative_to(_abs_no_symlink_resolve(repo_root)))
         elif isinstance(sub, dict) and sub.get("files_dir"):
             fd = sub["files_dir"]
-            fd_resolved = (repo_root / fd).resolve()
-            try:
-                child_folder = str(fd_resolved.relative_to(repo_root.resolve()))
-            except ValueError:
+            fd_path = _abs_no_symlink_resolve(repo_root / fd)
+            if not _is_inside_root(fd_path, repo_root):
                 report.errors.append(
                     f"!include {rel!r} declares files_dir {fd!r} outside repo root"
                 )
                 return
+            child_folder = str(fd_path.relative_to(_abs_no_symlink_resolve(repo_root)))
 
         # Cross-tree `..` ref check on the path the user wrote.
         if child_folder is not None and parent_folder is not None:
@@ -194,12 +228,14 @@ def _walk_workspace_node(
         files_dir = node.get("files_dir")
         current_folder = parent_folder
         if files_dir:
-            fd_resolved = (repo_root / files_dir).resolve()
-            try:
-                this_folder = str(fd_resolved.relative_to(repo_root.resolve()))
-            except ValueError:
-                report.errors.append(f"files_dir {files_dir!r} escapes repo root")
+            # Path-string check: mirror Go filepath.Abs/Rel — do NOT
+            # follow symlinks at this layer. Cross-repo symlinks
+            # (parent's dev-lead → sibling-repo) are intentional.
+            fd_path = _abs_no_symlink_resolve(repo_root / files_dir)
+            if not _is_inside_root(fd_path, repo_root):
+                report.errors.append(f"files_dir {files_dir!r} escapes repo root (path-string)")
                 return
+            this_folder = str(fd_path.relative_to(_abs_no_symlink_resolve(repo_root)))
             if not skip_files_dir_register:
                 report.add_edge(parent_folder or "<root>", this_folder)
             current_folder = this_folder
