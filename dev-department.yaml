@@ -66,15 +66,21 @@ defaults:
 
 # Roots block: list the top-level workspaces of this subtree.
 #
-# Each root entry is a `!include <path>/workspace.yaml` reference to a
-# workspace folder at the repo root level. The validator walks each
-# referenced workspace.yaml recursively via its `children:` field.
+# Each root entry resolves through `!include` to a workspace.yaml file.
+# The validator walks each referenced workspace.yaml recursively via its
+# `children:` field.
 #
 # Atomization rule (Hongming Q3+Q5): `children:` paths inside a
-# workspace.yaml MUST be relative-and-down-only (`./<child>`); no `..`.
+# workspace.yaml SHOULD be relative-and-down-only (`./<child>`); no `..`.
 # The `.molecule-ci/scripts/validate-tree.py` CI gate enforces this.
+# CURRENT STATE: extracted tree retains the parent template's flat shape
+# with `teams/*.yaml` !include'ing siblings via `..`. Atomization to
+# nested folders is Phase 3c-3 (next PR).
 #
-# This list is empty in the scaffold commit. Phase 3c-2 (extract content
-# with git history) populates it. Phase 3c-3 nests doc-spec + triage-op
-# under dev-lead/.
-roots: []
+# Phase 3c-2 (this PR): roots: points at teams/dev.yaml as the single
+# Dev Lead root that recursively pulls in core-platform, controlplane,
+# app-docs, infra, sdk sub-teams + release-manager + integration-tester
+# + fullstack-engineer floaters + documentation-specialist + triage-operator
+# (the last two added per Hongming Q1+Q2).
+roots:
+  - !include teams/dev.yaml
