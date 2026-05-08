@@ -39,7 +39,7 @@ jobs:
       - name: Install PyYAML
         run: python -m pip install --no-input --disable-pip-version-check pyyaml==6.0.1
 
-      - name: Run validator
+      - name: Run validator (--strict: hard-fail on cross-tree '..')
         run: |
           chmod +x .molecule-ci/scripts/validate-tree.py
-          .molecule-ci/scripts/validate-tree.py
+          .molecule-ci/scripts/validate-tree.py --strict
