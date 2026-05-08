@@ -1,19 +1,37 @@
 #!/usr/bin/env bash
-# local-e2e-setup.sh — bootstrap the local sibling-clone fixture for
-# end-to-end testing of the dev-department extraction (RFC internal#77).
+# local-e2e-setup.sh — bootstrap the local fixture for end-to-end
+# testing of the dev-department composition (RFC internal#77).
 #
-# Sets up:
+# Composition shape evolved 2026-05-08:
+#   - PR #5  (parent template): introduced dev-lead symlink + sibling-clone deploy.
+#   - PR #6  (parent template, this PR's parent): replaced symlink with `!external`
+#            resolver block. Composition now happens at platform import time.
+#
+# Effective state: only the parent template needs to be cloned. The dev tree
+# is fetched on demand by the workspace-server's `!external` resolver into
+# <orgBaseDir>/.external-cache/, populated when go tests call resolveYAMLIncludes.
+#
+# Optional: still clone molecule-dev-department as a sibling for symlink-
+# based composition tests (TestLocalE2E_DevDepartmentExtraction +
+# TestLocalE2E_FilesDirConsumption). Those tests skip gracefully if the
+# symlink isn't created — they're regression coverage for the symlink path
+# the resolver still supports, even though no production template uses it.
+#
+# Sets up (default):
 #   /tmp/local-e2e-deploy/
-#   ├── molecule-dev/                  ← parent template (symlink wires dev-lead)
-#   └── molecule-dev-department/       ← extracted dev tree
+#   └── molecule-dev/                  ← parent template (uses !external)
 #
-# After running, both Go tests are exercisable:
+# Sets up (with --with-symlink for legacy tests):
+#   /tmp/local-e2e-deploy/
+#   ├── molecule-dev/
+#   │   └── dev-lead → ../molecule-dev-department/dev-lead    (script-injected)
+#   └── molecule-dev-department/
+#
+# After running, the canonical local-e2e test is exercisable:
 #   cd <molecule-core>/workspace-server
-#   go test -v -run TestLocalE2E_DevDepartmentExtraction ./internal/handlers/
-#   go test -v -run TestLocalE2E_FilesDirConsumption ./internal/handlers/
+#   go test -v -run TestLocalE2E_ExternalDevDepartment ./internal/handlers/
 #
-# Idempotent: re-running pulls latest from both repos. Pass --fresh to
-# wipe and re-clone.
+# Idempotent: re-running pulls latest. Pass --fresh to wipe and re-clone.
 
 set -euo pipefail
 
@@ -22,10 +40,25 @@ GITEA="${GITEA_URL:-https://git.moleculesai.app}"
 TOKEN_PATH="${HOME}/.molecule-ai/gitea-token"
 
 PARENT_REPO="molecule-ai-org-template-molecule-dev"
-PARENT_DIR_NAME="molecule-dev"   # dir name parent expects (matches operator convention)
+PARENT_DIR_NAME="molecule-dev"
 SUBTREE_REPO="molecule-dev-department"
 
-if [[ "${1:-}" == "--fresh" ]]; then
+WITH_SYMLINK=0
+WIPE=0
+for arg in "$@"; do
+  case "$arg" in
+    --fresh)        WIPE=1 ;;
+    --with-symlink) WITH_SYMLINK=1 ;;
+    -h|--help)
+      sed -n '2,30p' "$0"
+      exit 0 ;;
+    *)
+      echo "unknown flag: $arg" >&2
+      exit 2 ;;
+  esac
+done
+
+if [[ "$WIPE" == "1" ]]; then
   echo "[fresh] wiping ${ROOT}"
   rm -rf "${ROOT}"
 fi
@@ -51,27 +84,36 @@ clone_or_pull() {
   fi
 }
 
-clone_or_pull "${PARENT_REPO}"  "${PARENT_DIR_NAME}"
-clone_or_pull "${SUBTREE_REPO}" "${SUBTREE_REPO}"
+clone_or_pull "${PARENT_REPO}" "${PARENT_DIR_NAME}"
 
-# Sanity: parent's dev-lead symlink target resolves to subtree's dev-lead.
-SYMLINK="${PARENT_DIR_NAME}/dev-lead"
-if [[ ! -L "${SYMLINK}" ]]; then
-  echo "ERROR: ${SYMLINK} is not a symlink — parent template's PR #5 (slim) may not be deployed yet" >&2
-  exit 3
-fi
-if [[ ! -f "${SYMLINK}/workspace.yaml" ]]; then
-  echo "ERROR: ${SYMLINK}/workspace.yaml does not resolve — symlink target missing" >&2
-  ls -la "${SYMLINK}" >&2
-  exit 4
+if [[ "$WITH_SYMLINK" == "1" ]]; then
+  clone_or_pull "${SUBTREE_REPO}" "${SUBTREE_REPO}"
+  SYMLINK="${PARENT_DIR_NAME}/dev-lead"
+  if [[ ! -L "${SYMLINK}" ]]; then
+    echo "[symlink] creating ${SYMLINK} → ../${SUBTREE_REPO}/dev-lead (post-PR #6 the parent no longer ships one; injected for legacy tests)"
+    ln -s "../${SUBTREE_REPO}/dev-lead" "${SYMLINK}"
+  fi
+  if [[ ! -f "${SYMLINK}/workspace.yaml" ]]; then
+    echo "ERROR: ${SYMLINK}/workspace.yaml does not resolve — symlink target missing" >&2
+    ls -la "${SYMLINK}" >&2
+    exit 4
+  fi
 fi
 
 echo ""
 echo "== ready =="
 echo "  parent : ${ROOT}/${PARENT_DIR_NAME}"
-echo "  subtree: ${ROOT}/${SUBTREE_REPO}"
-echo "  symlink: $(ls -la "${SYMLINK}" | awk '{print $NF}')"
+if [[ "$WITH_SYMLINK" == "1" ]]; then
+  echo "  subtree: ${ROOT}/${SUBTREE_REPO}"
+  echo "  symlink: $(ls -la "${PARENT_DIR_NAME}/dev-lead" | awk '{print $NF}')"
+fi
 echo ""
-echo "Run tests:"
+echo "Run the canonical e2e (default — uses !external resolver, no fixture):"
 echo "  cd <molecule-core>/workspace-server"
-echo "  go test -v -run TestLocalE2E_ ./internal/handlers/"
+echo "  go test -v -run TestLocalE2E_ExternalDevDepartment ./internal/handlers/"
+if [[ "$WITH_SYMLINK" == "1" ]]; then
+  echo ""
+  echo "Run the legacy symlink-path tests (regression coverage for symlink resolver):"
+  echo "  go test -v -run TestLocalE2E_DevDepartmentExtraction ./internal/handlers/"
+  echo "  go test -v -run TestLocalE2E_FilesDirConsumption ./internal/handlers/"
+fi
