@@ -1,0 +1,80 @@
+# Molecule AI — Dev Department subtree manifest
+#
+# This file is the importable-subtree's root config. It carries the same
+# shape as a full org template's `org.yaml` — defaults + category_routing
+# + plugin set + roots — but is consumed via gitops-style symlink from a
+# parent template (see README §Subtree contract).
+#
+# Hongming-confirmed name: dev-department.yaml (2026-05-08).
+#
+# Refs:
+#   internal#77 — gitops-style extraction RFC
+#   molecule-core#102 — symlink-resolution contract pinned by tests
+
+name: Molecule AI Dev Department
+description: >-
+  Importable subtree containing the engineering org tree:
+  Dev Lead + Core Platform + Controlplane + App-Docs (incl. Documentation
+  Specialist) + Infra + SDK sub-teams, plus floaters (Release Manager,
+  Integration Tester, Fullstack), plus Triage Operator.
+
+# Defaults applied to every workspace in this subtree. Per-workspace
+# `plugins:` field UNIONs with this list (see Hongming Q1: per-workspace
+# plugins are first-class). A leading `!` or `-` opts a default plugin
+# OUT for one workspace.
+#
+# Same shape as parent's org.yaml `defaults:` block. When this manifest
+# is grafted into a parent template via the symlink contract, the
+# parent's own defaults still apply at the parent-template level — these
+# only set defaults INSIDE the dev tree.
+defaults:
+  runtime: claude-code
+  tier: 2
+
+  plugins:
+    - ecc                              # Everything Claude Code guardrails + coding skills
+    - molecule-dev                     # Molecule AI codebase conventions, past bugs, review-loop
+    - superpowers                      # systematic-debugging, TDD, planning, verification
+    - molecule-careful-bash            # refuse destructive shell (rm -rf, push --force, DROP TABLE)
+    - molecule-prompt-watchdog         # warn on destructive user prompts
+    - molecule-audit-trail             # append every Edit/Write to .claude/audit.jsonl
+    - molecule-session-context         # auto-load cron learnings + PR/issue counts on SessionStart
+    - molecule-skill-cron-learnings    # per-tick learning JSONL (pairs with session-context)
+    - molecule-skill-update-docs       # keep architecture / README / edit-history aligned
+
+  # Audit-summary routing — Auditors fan out findings to the listed roles.
+  # Roles are by display name (Dev Lead, Backend Engineer, ...) not by
+  # workspace folder name. Roles must exist in this subtree's roots:
+  # block — the validator will catch dangling references in a follow-up.
+  category_routing:
+    security: [Backend Engineer, DevOps Engineer]
+    offensive: [Security Auditor, Backend Engineer, DevOps Engineer]
+    ui: [Frontend Engineer]
+    ux: [Frontend Engineer]
+    infra: [DevOps Engineer, Platform Engineer, SRE Engineer]
+    cloud: [DevOps Engineer, Platform Engineer, SRE Engineer, Backend Engineer]
+    qa: [QA Engineer]
+    performance: [Backend Engineer]
+    docs: [Documentation Specialist]
+    mixed: [Dev Lead]
+    research: [Research Lead]
+    plugins: [Technical Researcher]
+    template: [Dev Lead]
+    channels: [DevOps Engineer]
+
+  idle_prompt: ""    # Off by default — set per-workspace to enable idle reflection
+
+# Roots block: list the top-level workspaces of this subtree.
+#
+# Each root entry is a `!include <path>/workspace.yaml` reference to a
+# workspace folder at the repo root level. The validator walks each
+# referenced workspace.yaml recursively via its `children:` field.
+#
+# Atomization rule (Hongming Q3+Q5): `children:` paths inside a
+# workspace.yaml MUST be relative-and-down-only (`./<child>`); no `..`.
+# The `.molecule-ci/scripts/validate-tree.py` CI gate enforces this.
+#
+# This list is empty in the scaffold commit. Phase 3c-2 (extract content
+# with git history) populates it. Phase 3c-3 nests doc-spec + triage-op
+# under dev-lead/.
+roots: []
