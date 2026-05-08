@@ -83,4 +83,4 @@ defaults:
 # + fullstack-engineer floaters + documentation-specialist + triage-operator
 # (the last two added per Hongming Q1+Q2).
 roots:
-  - !include teams/dev.yaml
+  - !include ./dev-lead/workspace.yaml
