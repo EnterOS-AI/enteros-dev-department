@@ -295,9 +295,9 @@ The 24h log shows multiple "PM not responding to DMs" escalations within minutes
 
 ## Identity Tag Every External Comment
 
-Every GitHub PR description, issue body, comment, and Slack message MUST start with `[<your-role>-agent]` on the first line (e.g., `[core-lead-agent]`, `[devrel-engineer-agent]`).
+Every Gitea PR description, issue body, comment, and Slack message MUST start with `[<your-role>-agent]` on the first line (e.g., `[core-lead-agent]`, `[devrel-engineer-agent]`).
 
-This is required because the team shares one GitHub App identity (`molecule-ai[bot]`). Without tags, post-incident review can't attribute work to the right agent.
+Tags are now ALSO mechanically required for PR approval gates. The PR Merge Approval Gate above parses comment bodies for `[<team>-qa-agent] APPROVED` / `[<team>-security-agent] APPROVED` / `[<team>-uiux-agent] APPROVED`; an unprefixed `[qa-agent]` is rejected by the lint workflow. Each persona has its own Gitea identity (post-2026-05-06; see `feedback_per_agent_gitea_identity_default`), so the tag reflects who actually authored the comment — and the gate enforces that the right roles spoke.
 
 ## Merge Authority — Leads Merge in Their Domain
 
@@ -315,18 +315,34 @@ If you're an engineer and find yourself wanting to run `tea pr merge`, stop and 
 
 Before a Lead runs `tea pr merge`, **all four** of these must be on the PR:
 
-1. **All required CI checks green** — `tea pr checks <N>` shows every gating check passing
-2. **`[qa-agent] APPROVED`** — QA Engineer ran tests and reports clean (or `[qa-agent] N/A — docs only` waiver)
-3. **`[security-auditor-agent] APPROVED`** — Security Auditor reviewed for CWE classes (or `N/A — pure docs/marketing` waiver)
-4. **`[uiux-agent] APPROVED`** — UIUX Designer reviewed any canvas/UI changes (or `N/A — backend-only` waiver)
+1. **All required CI checks green** — `tea pr checks <N>` shows every gating check passing. For molecule-ai/internal + molecule-ai/molecule-core, the gating check `sop-tier-check / tier-check (pull_request)` enforces the §SOP-6 tier→team approval contract; see `internal/runbooks/dev-sop.md`.
+2. **`[<team>-qa-agent] APPROVED`** — QA Engineer ran tests + verified per-changed-file coverage ≥ 100% (or `[<team>-qa-agent] N/A — docs/lint only` waiver). Tag MUST include the team prefix (e.g. `[core-qa-agent]`, `[cp-qa-agent]`, `[app-qa-agent]`) — bare `[qa-agent]` is rejected at lint.
+3. **`[<team>-security-agent] APPROVED`** — Security Auditor reviewed for CWE classes; OWASP-checklist clean. Required on every PR touching `auth/`, `middleware/`, DB/handler code, or any plugin install path. Use `N/A — non-security-touching` for the rest.
+4. **`[<team>-uiux-agent] APPROVED`** — UIUX Designer reviewed any canvas/UI changes. `N/A — backend-only` for non-UI PRs.
 
 Each reviewer MUST verify before posting APPROVED (see Observability Rules above).
 
 If any reviewer posts `[<role>-agent] CHANGES REQUESTED: <reasons>`, the Lead does NOT merge.
 
-For trivial PRs (1-line typo, lint-only, doc-only), the Lead may waive QA/Security/UIUX with explicit `[<lead>-agent] WAIVE-REVIEW: <reason>`. Use sparingly.
+For trivial PRs (1-line typo, lint-only, doc-only), the Lead may waive QA/Security/UIUX with explicit `[<lead>-agent] WAIVE-REVIEW: <reason>`. Use sparingly — sop-drift cron in `internal` reports waiver-rate; chronic abuse rolls back to required.
 
 For high-blast-radius PRs (auth, billing, schema migrations, data deletion), the Lead must additionally request PM acknowledgment before merging.
+
+### Coverage bar — 100% per changed file
+
+Every PR's changed files must hit **100% line coverage** in their respective test surface (Go `go test -coverprofile`, Python `pytest --cov`, Canvas `vitest --coverage`). Aggregate-coverage doesn't satisfy — a 99%-aggregate file with one untested branch fails. Doc-only PRs are exempt because they touch no test surface.
+
+### e2e on platform-touching PRs
+
+If the PR touches `workspace-server/**`, `canvas/**`, `workspace/**`, `controlplane/**`, or any plugin under `plugins/**`, the QA reviewer's APPROVED MUST include `e2e: <suite>=pass`. The relevant suite per area: `tests/e2e/test_api.sh` for platform handlers, `tests/e2e/test_a2a_e2e.sh` for A2A, `tests/e2e/test_activity_e2e.sh` for activity, `tests/e2e/test_comprehensive_e2e.sh` for full surface. Doc/CI-config/runbook PRs are exempt.
+
+### Issue Discipline — file-or-it-didn't-happen
+
+Per Philosophy 2 above: any finding outside the immediate PR scope MUST be filed as a Gitea issue within 5 minutes of identification. Save the issue number to memory under key `finding-<YYYY-MM-DD>-<slug>`. The orchestrator (claude-ceo-assistant) cross-checks Loki `event_type=finding` events against Gitea issue creates and opens a `[missed-finding]` issue when the cross-check fails.
+
+### PR template required
+
+Every PR opened in `internal` or `molecule-core` MUST follow `.gitea/pull_request_template.md` exactly (sections: ## What, ## Why, ## Brief-falsification log, ## Verification, ## Tier; ops PRs add ## Idempotency notes + ## Loki query). The `scripts-lint / Scripts contract lint` workflow rejects PRs missing required sections. Trivial PRs can write `N/A — trivial` in any required body.
 
 ## Per-Role Least-Privilege Secrets
 
