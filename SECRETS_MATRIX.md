@@ -10,7 +10,7 @@ The platform supports per-workspace `.env` files (loaded by `org_import.go` and 
 
 | Role | Secrets it gets | Scope of action enabled |
 |---|---|---|
-| **All workspaces** (org-root `.env`) | `CLAUDE_CODE_OAUTH_TOKEN` (or model-specific equivalent: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) | Run the LLM. Required for any agent to think. |
+| **All workspaces** (org-root `.env`) | **Current default (MiniMax-M2.7 — `model:` in every workspace.yaml):** `ANTHROPIC_BASE_URL=https://api.minimax.io/anthropic` + `ANTHROPIC_AUTH_TOKEN=<MiniMax Token Plan key>`. Alternatives: `CLAUDE_CODE_OAUTH_TOKEN` / `ANTHROPIC_API_KEY` (Anthropic-direct), or `OPENAI_API_KEY`. | Run the LLM. Required for any agent to think. The MiniMax Token Plan key is in the operator SSOT as `MINIMAX_API_KEY` (+ `MINIMAX_BASE_URL`); see `internal#211`. |
 | **PM** | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (CEO comms only) | Send Telegram messages to CEO. Max 2-3/day per SHARED_RULES rule 11. |
 | **Dev Lead, Core Lead, App Lead, CP Lead, Infra Lead, SDK Lead** | `GH_TOKEN` (write) | `tea pr merge`, `tea issue close`, `tea pr review --approve` on the team's repo. SHARED_RULES rule 9: Leads merge in their domain. |
 | **Triage Operator** | `GH_TOKEN` (write, org-wide) | Cross-org triage: close stale, label, escalate. May merge mechanical PRs only. |
