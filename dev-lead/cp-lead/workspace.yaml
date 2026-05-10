@@ -4,7 +4,7 @@ role: >-
   Triage+merge authority. Leads CP-BE, CP-QA, CP-Security.
 tier: 3
 runtime: claude-code
-model: MiniMax-M2.7
+model: opus
 parent: dev-lead
 files_dir: dev-lead/cp-lead
 plugins: [molecule-hitl, molecule-skill-code-review, molecule-security-scan, molecule-skill-llm-judge, molecule-compliance]

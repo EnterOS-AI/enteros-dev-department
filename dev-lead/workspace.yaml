@@ -5,7 +5,7 @@ role: >-
   Manager, Integration Tester, and Fullstack (floater).
 tier: 3
 runtime: claude-code
-model: MiniMax-M2.7
+model: opus
 files_dir: dev-lead
 # Dev Lead enforces PR quality gates (see gate 2a in
         # .claude/skills/triage/SKILL.md) and reviews engineering output

@@ -4,7 +4,7 @@ role: >-
   molecule-ci, molecule-ai/internal. Leads Infra-SRE, Infra-Runtime-BE.
 tier: 3
 runtime: claude-code
-model: MiniMax-M2.7
+model: opus
 parent: dev-lead
 files_dir: dev-lead/infra-lead
 plugins: [molecule-hitl, molecule-skill-code-review, molecule-freeze-scope]

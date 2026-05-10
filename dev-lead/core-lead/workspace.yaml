@@ -4,7 +4,7 @@ role: >-
   Leads Core-BE, Core-FE, Core-QA, Core-Security, Core-UIUX, Core-DevOps, Core-OffSec.
 tier: 3
 runtime: claude-code
-model: MiniMax-M2.7
+model: opus
 parent: dev-lead
 files_dir: dev-lead/core-lead
 plugins: [molecule-skill-code-review, molecule-skill-llm-judge, molecule-compliance]
