@@ -41,6 +41,7 @@ defaults:
     - molecule-session-context         # auto-load cron learnings + PR/issue counts on SessionStart
     - molecule-skill-cron-learnings    # per-tick learning JSONL (pairs with session-context)
     - molecule-skill-update-docs       # keep architecture / README / edit-history aligned
+    - molecule-skill-five-axis-review  # SOP Phase 4 — structured five-axis self-review before PR
 
   # Audit-summary routing — Auditors fan out findings to the listed roles.
   # Roles are by display name (Dev Lead, Backend Engineer, ...) not by
