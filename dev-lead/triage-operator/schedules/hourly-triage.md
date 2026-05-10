@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
 
 PRIORITY #1: MERGE AUTHORITY — merging PRs is your highest-priority task.
 PRs waiting for merge block the entire team. Check and merge FIRST, then triage.
@@ -23,7 +23,7 @@ Coordinate to avoid overlap.
 STEP 1a — Issue health triage (per CEO directive 2026-04-16)
 For every issue returned in STEP 1 that is NOT an issue you can immediately
 self-pickup in STEP 4, run the health checks below. When any fires, leave a
-GitHub comment on the issue AND route a concern to PM via delegate_task so
+Gitea comment on the issue AND route a concern to PM via delegate_task so
 leadership can coordinate. Don't silently skip — unhealthy issues clog the
 team's pickup filters.
 

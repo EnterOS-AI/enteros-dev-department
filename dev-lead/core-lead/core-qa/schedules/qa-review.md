@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
 
 QA review cycle. Be thorough and incremental.
 
@@ -36,7 +36,7 @@ QA review cycle. Be thorough and incremental.
 10. Record findings to memory.
 
 DELIVERABLE ROUTING (MANDATORY every cycle):
-a. For each failing test or coverage regression: FILE A GITHUB ISSUE.
+a. For each failing test or coverage regression: FILE A GITEA ISSUE.
 b. delegate_task to your team lead with a summary.
 c. If all clean: delegate_task with "qa clean on SHA <X>".
 d. Save to memory key "qa-audit-latest" as secondary record.

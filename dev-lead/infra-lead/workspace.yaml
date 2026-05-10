@@ -1,7 +1,7 @@
 name: Infra Lead
 role: >-
   Infrastructure team lead. Owns molecule-ai-workspace-runtime, molecule-ai-status,
-  molecule-ci, Molecule-AI/internal. Leads Infra-SRE, Infra-Runtime-BE.
+  molecule-ci, molecule-ai/internal. Leads Infra-SRE, Infra-Runtime-BE.
 tier: 3
 runtime: claude-code
 model: MiniMax-M2.7

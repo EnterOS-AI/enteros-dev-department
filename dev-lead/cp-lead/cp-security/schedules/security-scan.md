@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
 
 Recurring security audit. Be thorough and incremental.
 
@@ -39,7 +39,7 @@ Recurring security audit. Be thorough and incremental.
 7. RECORD commit SHA: commit_memory "security-last-sha" with current HEAD.
 
 DELIVERABLE ROUTING (MANDATORY):
-a. File GitHub issues for CRITICAL/HIGH findings.
+a. File Gitea issues for CRITICAL/HIGH findings.
 b. delegate_task to team lead with summary.
 c. If clean: report "clean, audited <SHA_RANGE>".
 d. Save to memory "security-audit-latest".

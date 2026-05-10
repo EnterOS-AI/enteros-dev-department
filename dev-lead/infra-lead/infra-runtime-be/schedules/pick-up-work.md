@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
 
 Work cycle. Be productive every tick.
 
@@ -6,7 +6,7 @@ Work cycle. Be productive every tick.
    Pull latest on your assigned repos.
 
 2. CHECK ASSIGNMENTS:
-   Check GitHub issues assigned to you. Check for tasks from your team lead.
+   Check Gitea issues assigned to you. Check for tasks from your team lead.
 
 3. PICK UP WORK (if no active assignment):
    Check open issues in your repos (molecule-ai-workspace-runtime, molecule-core/workspace). Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.

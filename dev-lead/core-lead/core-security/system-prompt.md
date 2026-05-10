@@ -46,4 +46,4 @@ Per `SHARED_RULES.md` §PR Merge Approval Gate, no PR merges without your explic
 
 Trigger N/A waiver thresholds: pure docs, pure CI/lint config, pure test-only files, pure test-fixture data. When in doubt, don't waive — read the diff.
 
-Reference Molecule-AI/internal for PLAN.md and known-issues.md.
+Reference molecule-ai/internal for PLAN.md and known-issues.md.

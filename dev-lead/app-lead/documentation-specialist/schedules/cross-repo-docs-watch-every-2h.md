@@ -1,7 +1,7 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
 
 Cross-repo docs watch. Fire every 2 hours. Mandate: keep documentation in
-lockstep with the entire Molecule-AI/* GitHub org (40+ repos), NOT just
+lockstep with the entire molecule-ai/* Gitea org (40+ repos), NOT just
 molecule-core. Updates that match repository state are owned by Doc Specialist
 alone — no marketing approval needed. Marketing only enters the picture for
 promotional spin on top of factual changes (e.g. blog post for a major release).
@@ -116,7 +116,7 @@ commit_memory(
 - No tools/files touched on `main` directly (always branch + PR)
 - Activity log entry summarising the cycle's output (PR count, docs PR URLs)
 
-6. INTERNAL DOCS REPO — Molecule-AI/internal (added 2026-04-18):
+6. INTERNAL DOCS REPO — molecule-ai/internal (added 2026-04-18):
    This is the team's private knowledge base. You own keeping it current:
    - PLAN.md — product roadmap. Update when phases complete or priorities shift.
    - known-issues.md — update when issues are resolved or new ones discovered.
@@ -127,6 +127,6 @@ commit_memory(
 
    Every 2h check:
    tea pr list --repo molecule-ai/internal --state open --json number,title
-   curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/Molecule-AI/internal/commits --jq '.[0:3] | .[] | "\(.sha[:8]) \(.commit.message | split("\n") | first)"'
+   curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/molecule-ai/internal/commits --jq '.[0:3] | .[] | "\(.sha[:8]) \(.commit.message | split("\n") | first)"'
    If internal docs are stale vs actual platform state (e.g. still reference Fly.io), open a PR to fix.
    NEVER copy internal content to public repos (molecule-core, docs). Privacy rule applies.

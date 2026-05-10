@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
 
 Daily public CHANGELOG. Fire at 23:50 UTC. Aggregates every merged PR
 across the entire Molecule-AI/* org for the calendar day (00:00–23:50 UTC)
@@ -38,7 +38,7 @@ Read each PR's title + body + files-changed. Map to one of these sections:
 
 ## 3. WRITE the changelog entry
 
-Edit `content/docs/changelog.mdx` in the `Molecule-AI/docs` repo. Top-of-file
+Edit `content/docs/changelog.mdx` in the `molecule-ai/docs` repo. Top-of-file
 format (newest first):
 
 ```mdx
@@ -131,7 +131,7 @@ If any hit → DO NOT PUSH. Fix the offending entry first.
 
 ## DEFINITION OF DONE
 
-- Branch + PR opened against `Molecule-AI/docs` with today's entry
+- Branch + PR opened against `molecule-ai/docs` with today's entry
 - Memory `changelog-YYYY-MM-DD` written
 - Marketing Lead notified if there were promotable items
 - Quiet-day entry written if there was nothing else

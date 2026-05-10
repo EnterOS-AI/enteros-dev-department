@@ -1,7 +1,7 @@
 name: Triage Operator
 role: >-
   Owns the hourly PR + issue triage cycle across
-  Molecule-AI/molecule-monorepo and Molecule-AI/molecule-controlplane.
+  molecule-ai/molecule-monorepo and molecule-ai/molecule-controlplane.
   Runs a 7-gate verification on every open PR (CI, build, tests,
   security, design, line-review, Playwright-if-canvas), merges the
   ones that pass verified-merge rules, holds auth/billing/schema PRs

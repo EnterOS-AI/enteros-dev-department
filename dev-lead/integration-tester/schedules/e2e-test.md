@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
 
 Cross-repo E2E test cycle. Run every 30 minutes.
 
@@ -17,7 +17,7 @@ Cross-repo E2E test cycle. Run every 30 minutes.
    d. A2A message:        POST /workspaces/:id/a2a with a test message, verify 200 + valid response body
    e. Workspace delete:   DELETE /workspaces/:id, verify 200
    f. Verify deleted:     GET /workspaces/:id should return 404
-   Record pass/fail for each step. Any failure = file a GitHub issue with the step that failed + response body.
+   Record pass/fail for each step. Any failure = file a Gitea issue with the step that failed + response body.
 
 4. SCHEDULER TEST — verify cron fires:
    curl -sf http://localhost:8080/admin/liveness | jq '.scheduler_status'

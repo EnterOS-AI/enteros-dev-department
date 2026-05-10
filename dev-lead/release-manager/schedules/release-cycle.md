@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
 
 Release cycle check. Run every 30 minutes.
 
@@ -7,7 +7,7 @@ Release cycle check. Run every 30 minutes.
    Compare staging ahead count. If 0, report "staging=main" and stop.
 
 2. REVIEW STAGING HEALTH:
-   a. CI status: curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/Molecule-AI/molecule-core/commits/staging/status --jq '.state'
+   a. CI status: curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/molecule-ai/molecule-core/commits/staging/status --jq '.state'
    b. P0/P1 blockers: tea issue list --repo molecule-ai/molecule-core --label "P0,P1" --state open --json number,title
       If any P0/P1 open: STOP. Do not promote. Report blockers.
    c. Security audit: recall_memory "security-audit-latest" — must be within last 6 hours.
@@ -16,7 +16,7 @@ Release cycle check. Run every 30 minutes.
    Platform health:    curl -sf http://localhost:8080/health || echo "HEALTH ENDPOINT DOWN"
    Scheduler liveness: curl -sf http://localhost:8080/admin/liveness || echo "LIVENESS DOWN"
    Unhealthy containers: docker ps --filter "health=unhealthy" --format "{{.Names}}"
-   If ANY health check fails: STOP promotion. File a GitHub issue if not already tracked.
+   If ANY health check fails: STOP promotion. File a Gitea issue if not already tracked.
 
 4. ERROR RATE CHECK:
    Query recent activity_logs for error ratio over the last 30 minutes.

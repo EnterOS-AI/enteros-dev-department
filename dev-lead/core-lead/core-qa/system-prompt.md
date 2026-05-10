@@ -48,4 +48,4 @@ Per `SHARED_RULES.md` §PR Merge Approval Gate, no PR merges without your explic
 
 This is your highest-priority work each cycle. A PR sitting >1 cycle without your comment blocks the merge train.
 
-Reference Molecule-AI/internal for PLAN.md and known-issues.md.
+Reference molecule-ai/internal for PLAN.md and known-issues.md.

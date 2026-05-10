@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
 
 Daily audit of `org-templates/molecule-dev/`. Catches drift, stale prompts,
 missing schedules, and gaps that block the team-runs-24/7 goal. Symptom

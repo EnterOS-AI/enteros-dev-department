@@ -3,7 +3,7 @@ role: fullstack-engineer
 runtime: claude-code
 tier: 3
 template: claude-code-default
-github_repo: Molecule-AI/molecule-core
+github_repo: molecule-ai/molecule-core
 
 runtime_config:
   timeout: 0

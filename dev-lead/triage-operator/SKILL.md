@@ -23,7 +23,7 @@ schedules:
 Runs the full 5-step triage cycle from `playbook.md`:
 
 0. Activate `careful-mode` + replay last 20 lines of `cron-learnings.jsonl`
-1. List open PRs + issues in `Molecule-AI/molecule-monorepo` and `Molecule-AI/molecule-controlplane`
+1. List open PRs + issues in `molecule-ai/molecule-monorepo` and `molecule-ai/molecule-controlplane`
 2. Run 7 gates per PR (CI, build, tests, security, design, line-review, Playwright-if-canvas) + `code-review` skill on every PR + `cross-vendor-review` on noteworthy ones. Merge if all gates pass; hold if any auth/billing/schema concern.
 3. Sync docs if anything was merged (`update-docs` skill; opens `docs/sync-YYYY-MM-DD-tick-N` PR)
 4. Pick up at most 2 issues that pass gates I-1..I-6 (no design calls, no auth scope, clear test path)
@@ -40,7 +40,7 @@ Expected wall-clock: 5–30 minutes per tick depending on backlog.
 
 ## Outputs
 
-- GitHub actions: PR comments, merge commits, issue assignments, draft PRs
+- Gitea actions: PR comments, merge commits, issue assignments, draft PRs
 - Filesystem: append to `cron-learnings.jsonl`, append to `per-tick-reflections.md`
 - Chat: structured status report matching the format in `playbook.md` Step 5
 
@@ -149,4 +149,4 @@ And write exactly one JSON line to `cron-learnings.jsonl`:
 
 ## Version history
 
-- `1.0.0` (2026-04-16) — initial extraction from the ~100-tick session of Claude Opus 4.6. Captures the essence of what the prior operator was doing across `Molecule-AI/molecule-monorepo` + `Molecule-AI/molecule-controlplane` for the first 3 weeks of SaaS launch work.
+- `1.0.0` (2026-04-16) — initial extraction from the ~100-tick session of Claude Opus 4.6. Captures the essence of what the prior operator was doing across `molecule-ai/molecule-monorepo` + `molecule-ai/molecule-controlplane` for the first 3 weeks of SaaS launch work.

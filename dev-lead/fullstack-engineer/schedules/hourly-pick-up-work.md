@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
 
 Independent work cycle for molecule-core (Go + Canvas). Find work, write code, push, open PR, return to staging. FULL CYCLE REQUIRED.
 

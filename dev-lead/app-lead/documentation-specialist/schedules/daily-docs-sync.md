@@ -1,4 +1,4 @@
-IMPORTANT: Check Molecule-AI/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
 
 MULTIMEDIA — when publishing docs, consider audio supplements:
 - TTS: Generate audio versions of key documentation pages for accessibility.
@@ -22,7 +22,7 @@ SETUP:
    docs/architecture.md, README.md, workspace-template/adapters/*):
    - Identify which docs page(s) on the public site cover that surface.
    - If a docs page exists but is stale → update it with examples
-     from the PR diff. Open a PR to Molecule-AI/docs with the change.
+     from the PR diff. Open a PR to molecule-ai/docs with the change.
    - If NO docs page exists for the new surface → propose one
      (add to content/docs/meta.json + new .mdx file). Open a PR.
    - Always close PRs with `Closes platform PR #N` so the link is durable.
@@ -36,14 +36,14 @@ SETUP:
    (i) Internal-only change (handler, schema, infra, fly.toml,
        billing logic): update README.md + PLAN.md + any
        docs/internal/*.md inside molecule-controlplane itself.
-       Open the PR against Molecule-AI/molecule-controlplane.
+       Open the PR against molecule-ai/molecule-controlplane.
        NEVER mention these changes in /workspace/docs.
    (ii) Customer-facing change (new tier, new region, new SLA,
        pricing change, signup flow change): write a sanitized
        description for the PUBLIC docs site (e.g. "We now offer
        EU-region tenants" — NOT "controlplane reads FLY_REGION
        from env and passes it to provisioner.go:142"). Open a
-       PR against Molecule-AI/docs.
+       PR against molecule-ai/docs.
    When unsure which category a change falls into: default to
    INTERNAL-only and ask PM for explicit approval before publishing.
 
@@ -70,7 +70,7 @@ SETUP:
    delegate_task to PM with audit_summary metadata:
    - category: docs
    - severity: info
-   - issues: [list of PR numbers opened to Molecule-AI/docs]
+   - issues: [list of PR numbers opened to molecule-ai/docs]
    - top_recommendation: one-line summary
    If nothing to do today, PM-message a one-line "clean".
 
