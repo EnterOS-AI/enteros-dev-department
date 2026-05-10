@@ -4,7 +4,7 @@ role: >-
   Leads App-FE, App-QA, Doc Specialist, Technical Writer.
 tier: 3
 runtime: claude-code
-model: MiniMax-M2.7
+model: opus
 parent: dev-lead
 files_dir: dev-lead/app-lead
 plugins: [molecule-skill-code-review, molecule-skill-llm-judge]

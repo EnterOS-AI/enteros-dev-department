@@ -4,7 +4,7 @@ role: >-
   molecule-cli, all plugin repos. Leads SDK-Dev, Plugin-Dev.
 tier: 3
 runtime: claude-code
-model: MiniMax-M2.7
+model: opus
 parent: dev-lead
 files_dir: dev-lead/sdk-lead
 plugins: [molecule-skill-code-review, molecule-skill-llm-judge, molecule-compliance]
