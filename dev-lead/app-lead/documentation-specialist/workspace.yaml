@@ -3,8 +3,8 @@ role: >-
   Owns end-to-end documentation across the entire Molecule AI Gitea org
   (40+ repos as of 2026-04-16): molecule-core (renamed from molecule-monorepo),
   the docs site (molecule-ai/docs → doc.moleculesai.app, Fumadocs + Next.js 15),
-  every workspace template repo (claude-code, hermes, langgraph, deepagents,
-  crewai, autogen, openclaw, gemini-cli), every plugin repo (~21 of them
+  every maintained workspace template repo (claude-code, codex, hermes,
+  openclaw), every plugin repo (~21 of them
   including ecc, superpowers, molecule-dev, molecule-careful-bash, and the
   rest), every org template (free-beats-all, medo-smoke, molecule-dev,
   molecule-worker-gemini, reno-stars), the SDKs (molecule-sdk-python,
@@ -77,4 +77,3 @@ schedules:
     cron_expr: "0 11 * * 1"
     prompt_file: schedules/weekly-terminology-audit.md
     enabled: true
-
