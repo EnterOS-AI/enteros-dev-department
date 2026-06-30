@@ -1,6 +1,6 @@
 name: SDK-Dev
 role: >-
-  SDK developer. Implements features for molecule-sdk-python,
+  SDK developer. Implements features for molecule-ai-sdk,
   molecule-mcp-server, molecule-cli. Maintains SDK tests and docs.
 tier: 3
 runtime: claude-code

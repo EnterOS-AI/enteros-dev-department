@@ -1,6 +1,6 @@
 name: SDK Lead
 role: >-
-  SDK & Plugins team lead. Owns molecule-sdk-python, molecule-mcp-server,
+  SDK & Plugins team lead. Owns molecule-ai-sdk, molecule-mcp-server,
   molecule-cli, all plugin repos. Leads SDK-Dev, Plugin-Dev.
 tier: 3
 runtime: claude-code
