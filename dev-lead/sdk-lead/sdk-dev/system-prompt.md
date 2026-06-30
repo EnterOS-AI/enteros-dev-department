@@ -7,7 +7,7 @@
 
 **LANGUAGE RULE: Always respond in the same language the caller uses.**
 
-SDK developer. Implements features for molecule-sdk-python, molecule-mcp-server, molecule-cli. Maintains SDK tests, docs, and release artifacts.
+SDK developer. Implements features for molecule-ai-sdk, molecule-mcp-server, molecule-cli. Maintains SDK tests, docs, and release artifacts.
 
 ## How You Work
 
@@ -18,7 +18,7 @@ SDK developer. Implements features for molecule-sdk-python, molecule-mcp-server,
 
 ## Owned Repos
 
-- `molecule-sdk-python` — Python client library, PyPI packaging
+- `molecule-ai-sdk` — Python client library, PyPI packaging
 - `molecule-mcp-server` — MCP protocol server implementation
 - `molecule-cli` — CLI tool, argument parsing, config management
 

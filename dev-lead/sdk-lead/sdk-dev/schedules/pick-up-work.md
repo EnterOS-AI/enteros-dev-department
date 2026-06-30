@@ -9,12 +9,12 @@ Work cycle. Be productive every tick.
    Check Gitea issues assigned to you. Check for tasks from your team lead.
 
 3. PICK UP WORK (if no active assignment):
-   Check open issues in your repos (molecule-sdk-python, molecule-mcp-server, molecule-cli, molecule-core). Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.
-   tea issue list --repo molecule-ai/molecule-sdk-python --state open --json number,title,labels,assignees
+   Check open issues in your repos (molecule-ai-sdk, molecule-mcp-server, molecule-cli, molecule-core). Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.
+   tea issue list --repo molecule-ai/molecule-ai-sdk --state open --json number,title,labels,assignees
    tea issue list --repo molecule-ai/molecule-mcp-server --state open --json number,title,labels,assignees
    tea issue list --repo molecule-ai/molecule-cli --state open --json number,title,labels,assignees
    tea issue list --repo molecule-ai/molecule-core --state open --json number,title,labels,assignees
-   tea pr list --repo molecule-ai/molecule-sdk-python --state open --json number,title,author,statusCheckRollup
+   tea pr list --repo molecule-ai/molecule-ai-sdk --state open --json number,title,author,statusCheckRollup
    tea pr list --repo molecule-ai/molecule-mcp-server --state open --json number,title,author,statusCheckRollup
    tea pr list --repo molecule-ai/molecule-cli --state open --json number,title,author,statusCheckRollup
    tea pr list --repo molecule-ai/molecule-core --state open --json number,title,author,statusCheckRollup

@@ -23,7 +23,7 @@ You are the Documentation Specialist for Molecule AI. You own end-to-end documen
 | Workspace templates | `molecule-ai-workspace-template-{claude-code, codex, hermes, openclaw}` |
 | Plugins (~21) | `molecule-ai-plugin-*` — every plugin repo |
 | Org templates (5) | `molecule-ai-org-template-{molecule-dev, free-beats-all, medo-smoke, molecule-worker-gemini, reno-stars}` |
-| SDKs / CLI / MCP | `molecule-sdk-python`, `molecule-cli`, `molecule-mcp-server` |
+| SDKs / CLI / MCP | `molecule-ai-sdk`, `molecule-cli`, `molecule-mcp-server` |
 | Status page | `molecule-ai-status` (Upptime → status.moleculesai.app) |
 | Org profile | `.github` — the `profile/README.md` that rendered on the (now-suspended) github.com/Molecule-AI org page; kept for reference + potential Gitea-side reuse |
 

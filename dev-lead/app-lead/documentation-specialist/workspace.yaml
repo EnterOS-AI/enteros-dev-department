@@ -7,7 +7,7 @@ role: >-
   openclaw), every plugin repo (~21 of them
   including ecc, superpowers, molecule-dev, molecule-careful-bash, and the
   rest), every org template (free-beats-all, medo-smoke, molecule-dev,
-  molecule-worker-gemini, reno-stars), the SDKs (molecule-sdk-python,
+  molecule-worker-gemini, reno-stars), the SDKs (molecule-ai-sdk,
   molecule-cli, molecule-mcp-server, molecule-ai-workspace-runtime), the
   shared CI repo (molecule-ci), the status page (molecule-ai-status), AND
   the SaaS controlplane (PRIVATE, molecule-ai/molecule-controlplane).
