@@ -148,6 +148,12 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
                 re.compile(r"publish\s+to\s+(?:public\s+)?PyPI/npm", re.IGNORECASE),
             )
         )
+        patterns.append(
+            (
+                "stale-sdk-release-version-bump",
+                re.compile(r"Release process:\s*version bump", re.IGNORECASE),
+            )
+        )
 
     for lineno, line in enumerate(text.splitlines(), 1):
         for code, pattern in patterns:
@@ -164,6 +170,23 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
                     f"{relative_text}:{lineno}: "
                     f"[incomplete-security-approval-gate] missing APPROVED for {missing}"
                 )
+    if relative_text == "dev-lead/sdk-lead/system-prompt.md":
+        required = (
+            "choose and document the version",
+            "reviewed `main`",
+            "explicit GO",
+            "`sdk-v*` tag",
+            "source of truth",
+            "no committed release-only version bump",
+            "private Gitea Python registry",
+            "wheel and sdist",
+            "verify the exact artifacts",
+        )
+        missing = [needle for needle in required if needle not in text]
+        if missing:
+            errors.append(
+                f"{relative_text}: [missing-sdk-release-contract] missing {missing}"
+            )
     return errors
 
 

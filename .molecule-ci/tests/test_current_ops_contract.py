@@ -134,10 +134,10 @@ class CurrentOperationsContractTests(unittest.TestCase):
             "Release process: version bump -> changelog -> tests green -> "
             "tag -> publish to PyPI/npm",
         )
-        self.assertTrue(
-            any("stale-sdk-release-destination" in error for error in errors),
-            errors,
-        )
+        joined = "\n".join(errors)
+        self.assertIn("stale-sdk-release-destination", joined)
+        self.assertIn("stale-sdk-release-version-bump", joined)
+        self.assertIn("missing-sdk-release-contract", joined)
 
     def test_role_bootstrap_must_clone_its_owned_repository(self) -> None:
         errors = self.validator.bootstrap_errors(
