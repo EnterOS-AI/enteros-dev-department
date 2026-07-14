@@ -11,7 +11,7 @@ don't publish.
 
 1. Clone all three repos with a clean remote and ephemeral credential helper:
    ```bash
-   test -n "${GITEA_TOKEN:-}" || { echo "GITEA_TOKEN is required" >&2; exit 2; }
+   test -n "${GITEA_TOKEN:+set}" || { echo "GITEA_TOKEN is required" >&2; exit 2; }
    gitea_git() (
      set +x
      git -c credential.helper= \

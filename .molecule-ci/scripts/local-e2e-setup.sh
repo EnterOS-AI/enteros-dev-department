@@ -66,7 +66,7 @@ fi
 mkdir -p "${ROOT}"
 cd "${ROOT}"
 
-if [[ -z "${GITEA_TOKEN:-}" ]]; then
+if [[ "${GITEA_TOKEN:+set}" != set ]]; then
   if [[ -z "${TOKEN_PATH}" || ! -f "${TOKEN_PATH}" ]]; then
     echo "ERROR: export GITEA_TOKEN or set GITEA_TOKEN_FILE explicitly" >&2
     exit 2

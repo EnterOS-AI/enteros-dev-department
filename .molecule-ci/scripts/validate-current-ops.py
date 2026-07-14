@@ -55,6 +55,7 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
         ("unsupported-tea", re.compile(r"\btea\b")),
         ("unsupported-jq", re.compile(r"\bjq\b")),
         ("unsupported-curl-jq", re.compile(r"\bcurl\b[^\n]*\s--jq\b")),
+        ("unsafe-token-xtrace-probe", re.compile(r"\$\{GITEA_TOKEN:-\}")),
         (
             "unsafe-token-argv",
             re.compile(

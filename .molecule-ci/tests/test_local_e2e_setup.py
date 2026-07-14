@@ -79,11 +79,14 @@ class LocalE2ESetupTests(unittest.TestCase):
                 env=env,
                 check=False,
             )
+            exported_env = env.copy()
+            exported_env["GITEA_TOKEN"] = sentinel
+            exported_env.pop("GITEA_TOKEN_FILE", None)
             second = subprocess.run(
                 ["bash", "-x", str(SETUP)],
                 text=True,
                 capture_output=True,
-                env=env,
+                env=exported_env,
                 check=False,
             )
 

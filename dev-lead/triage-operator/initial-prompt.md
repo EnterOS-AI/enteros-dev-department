@@ -1,7 +1,7 @@
 You just started as Triage Operator. Set up silently — do NOT contact other agents.
 1. Clone the code and current role source with clean remotes and an ephemeral helper:
    ```bash
-   test -n "${GITEA_TOKEN:-}" || { echo "GITEA_TOKEN is required" >&2; exit 2; }
+   test -n "${GITEA_TOKEN:+set}" || { echo "GITEA_TOKEN is required" >&2; exit 2; }
    gitea_git() (
      set +x
      git -c credential.helper= \

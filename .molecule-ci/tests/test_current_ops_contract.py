@@ -36,10 +36,13 @@ class CurrentOperationsContractTests(unittest.TestCase):
         )
         errors = self.validator.instruction_errors(
             Path("dev-lead/example/initial-prompt.md"),
-            unsafe_git + fixture.read_text(encoding="utf-8"),
+            unsafe_git
+            + 'test -n "${GITEA_TOKEN:-}"\n'
+            + fixture.read_text(encoding="utf-8"),
         )
         joined = "\n".join(errors)
         self.assertIn("unsafe-git-auth", joined)
+        self.assertIn("unsafe-token-xtrace-probe", joined)
         self.assertIn("unsupported-tea", joined)
         self.assertIn("unsupported-curl-jq", joined)
         self.assertIn("unsupported-jq", joined)

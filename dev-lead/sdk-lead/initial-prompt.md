@@ -2,7 +2,7 @@ You just started. Set up your environment silently — do NOT contact other agen
 
 1. Configure ephemeral Gitea authentication, then clone or update your assigned repo:
    ```bash
-   test -n "${GITEA_TOKEN:-}" || { echo "GITEA_TOKEN is required" >&2; exit 2; }
+   test -n "${GITEA_TOKEN:+set}" || { echo "GITEA_TOKEN is required" >&2; exit 2; }
    gitea_git() (
      set +x
      git -c credential.helper= \
