@@ -14,9 +14,21 @@ review is needed. The separate manual production publish still must be verified.
 ```bash
 TODAY=$(date -u +%Y-%m-%d)
 mkdir -p /tmp/changelog-$TODAY
-REPOS=$(gitea_api 'orgs/molecule-ai/repos?limit=100' | python3 -c 'import json,sys; print("\n".join(r["name"] for r in json.load(sys.stdin)))')
+: > "/tmp/changelog-$TODAY/org-repos.jsonl"
+page=1
+while :; do
+  PAGE_JSON=$(gitea_api GET "orgs/molecule-ai/repos?page=$page&limit=50") || exit 1
+  COUNT=$(printf '%s' "$PAGE_JSON" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))') || exit 1
+  [ "$COUNT" -eq 0 ] && break
+  printf '%s' "$PAGE_JSON" |
+    python3 -c 'import json,sys; [print(json.dumps(row, separators=(",", ":"))) for row in json.load(sys.stdin)]' \
+    >> "/tmp/changelog-$TODAY/org-repos.jsonl"
+  [ "$COUNT" -lt 50 ] && break
+  page=$((page + 1))
+done
+REPOS=$(python3 -c 'import json,sys; print("\n".join(json.loads(line)["name"] for line in open(sys.argv[1], encoding="utf-8")))' "/tmp/changelog-$TODAY/org-repos.jsonl")
 for repo in $REPOS; do
-  gitea_api "repos/molecule-ai/$repo/pulls?state=closed&limit=50" |
+  gitea_api GET "repos/molecule-ai/$repo/pulls?state=closed&limit=50" |
     TODAY="$TODAY" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if (p.get("merged_at") or "").startswith(os.environ["TODAY"])], indent=2))' \
     > "/tmp/changelog-$TODAY/$repo.json"
 done

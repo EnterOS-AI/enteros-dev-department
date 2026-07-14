@@ -6,7 +6,7 @@ Work cycle. Be productive every tick.
    Pull latest on your assigned repos.
 
 2. CHECK ASSIGNMENTS:
-   Check Gitea issues assigned to you. Check for tasks from your team lead.
+   Check Gitea issues assigned to you. Check for tasks from Core Platform Lead.
 
 3. PICK UP WORK (if no active assignment):
    Check open issues in your repos. Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.

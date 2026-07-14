@@ -15,7 +15,7 @@ SETUP:
 1a. PAIR RECENT PLATFORM PRS (last 24h):
    cd /workspace/repo
    SINCE=$(python3 -c 'from datetime import datetime,timedelta,timezone; print((datetime.now(timezone.utc)-timedelta(hours=24)).isoformat().replace("+00:00","Z"))')
-   gitea_api 'repos/molecule-ai/molecule-core/pulls?state=closed&limit=50' |
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=closed&limit=50' |
      SINCE="$SINCE" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if p.get("merged_at") and p["merged_at"] >= os.environ["SINCE"]], indent=2))'
    Fetch `pulls/<number>/files` for each selected PR before deciding its docs impact.
    For each merged PR that touches a public surface
@@ -30,7 +30,7 @@ SETUP:
 
 1b. PAIR RECENT CONTROLPLANE PRS (last 24h):
    cd /workspace/controlplane
-   gitea_api 'repos/molecule-ai/molecule-controlplane/pulls?state=closed&limit=50' |
+   gitea_api GET 'repos/molecule-ai/molecule-controlplane/pulls?state=closed&limit=50' |
      SINCE="$SINCE" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if p.get("merged_at") and p["merged_at"] >= os.environ["SINCE"]], indent=2))'
    Fetch `pulls/<number>/files` for each selected PR before deciding its docs impact.
    ⚠️  PRIVATE REPO. Two cases:

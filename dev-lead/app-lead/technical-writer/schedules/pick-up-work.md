@@ -1,5 +1,5 @@
 PRIORITY 1 — REVIEW DOCS PRs:
-   gitea_api 'repos/molecule-ai/docs/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/docs/pulls?state=open&limit=50' | python3 -m json.tool
    For each open PR: read the diff, check writing quality, accuracy, formatting.
    Post `{"event":"APPROVED","body":"<review>"}` or
    `{"event":"REQUEST_CHANGES","body":"<findings>"}` to
@@ -14,7 +14,7 @@ Work cycle. Be productive every tick.
    Pull latest on your assigned repos.
 
 2. CHECK ASSIGNMENTS:
-   Check Gitea issues assigned to you. Check for tasks from your team lead.
+   Check Gitea issues assigned to you. Check for tasks from App & Docs Lead.
 
 3. PICK UP WORK (if no active assignment):
    Check open issues in your repos. Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.

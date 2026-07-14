@@ -1,6 +1,6 @@
 PR REVIEW SHEPHERD — your job is to ensure open PRs get reviewed and merged, not abandoned.
 
-1. List all open PRs: `gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool`
+1. List all open PRs: `gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool`
 2. For each PR older than 6 hours:
    - Check CI status through `GET repos/molecule-ai/molecule-core/commits/<head_sha>/status`
    - If CI green: review the diff, approve if safe, merge it

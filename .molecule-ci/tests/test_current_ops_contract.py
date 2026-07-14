@@ -50,6 +50,9 @@ class CurrentOperationsContractTests(unittest.TestCase):
     def test_stale_stack_and_endpoint_fixtures_are_rejected(self) -> None:
         cases = [
             ("dev-lead/core-lead/core-be/system-prompt.md", "cd /workspace/repo/platform && go test ./...", "stale-core-layout"),
+            ("dev-lead/core-lead/core-be/system-prompt.md", "Own the platform/ directory", "stale-core-layout"),
+            ("dev-lead/core-lead/core-qa/system-prompt.md", "Run Python workspace-template tests", "stale-runtime-root"),
+            ("dev-lead/sdk-lead/plugin-dev/system-prompt.md", "Inspect workspace/plugins_registry/", "stale-runtime-root"),
             ("dev-lead/core-lead/initial-prompt.md", "cat /workspace/repo/CLAUDE.md", "stale-root-guidance"),
             ("dev-lead/cp-lead/cp-qa/schedules/qa-review.md", "npm test -- --coverage", "stale-cp-stack"),
             ("dev-lead/integration-tester/schedules/e2e-test.md", "curl -sf http://localhost:8080/health", "stale-local-endpoint"),
@@ -59,6 +62,79 @@ class CurrentOperationsContractTests(unittest.TestCase):
             with self.subTest(relative=relative):
                 errors = self.validator.instruction_errors(Path(relative), text)
                 self.assertTrue(any(code in error for error in errors), errors)
+
+    def test_single_page_org_inventory_is_rejected(self) -> None:
+        errors = self.validator.instruction_errors(
+            Path("dev-lead/example/system-prompt.md"),
+            "gitea_api GET 'orgs/molecule-ai/repos?limit=100'",
+        )
+        self.assertTrue(any("unpaginated-org-inventory" in error for error in errors), errors)
+
+    def test_generic_delegation_targets_and_bare_gate_tags_are_rejected(self) -> None:
+        text = """delegate_task to team lead with summary.
+[qa-agent] APPROVED
+[security-auditor-agent] APPROVED
+[uiux-agent] APPROVED
+"""
+        errors = self.validator.instruction_errors(
+            Path("dev-lead/example/schedules/review.md"), text
+        )
+        joined = "\n".join(errors)
+        self.assertIn("generic-delegation-target", joined)
+        self.assertIn("bare-approval-tag", joined)
+
+        pickup_errors = self.validator.instruction_errors(
+            Path("dev-lead/example/schedules/pick-up-work.md"),
+            "Check for tasks from your team lead.",
+        )
+        self.assertTrue(
+            any("generic-delegation-target" in error for error in pickup_errors),
+            pickup_errors,
+        )
+
+    def test_literal_placeholder_in_gitea_endpoint_is_rejected(self) -> None:
+        errors = self.validator.instruction_errors(
+            Path("dev-lead/core-lead/schedules/orchestrator-pulse.md"),
+            "gitea_api GET 'repos/molecule-ai/molecule-core/pulls/<N>/reviews'",
+        )
+        self.assertTrue(
+            any("literal-gitea-endpoint-placeholder" in error for error in errors),
+            errors,
+        )
+
+    def test_system_prompt_requires_repository_specific_deployment_contract(self) -> None:
+        errors = self.validator.deployment_errors(
+            Path("dev-lead/example/system-prompt.md"),
+            "Merge to `main` triggers CI deployment.",
+        )
+        self.assertTrue(any("unqualified-main-deploy" in error for error in errors), errors)
+
+        instruction_errors = self.validator.instruction_errors(
+            Path("dev-lead/example/handoff-notes.md"),
+            "Deployments are CI-on-merge.",
+        )
+        self.assertTrue(
+            any("unqualified-ci-on-merge" in error for error in instruction_errors),
+            instruction_errors,
+        )
+
+    def test_role_bootstrap_must_clone_its_owned_repository(self) -> None:
+        errors = self.validator.bootstrap_errors(
+            Path("dev-lead/infra-lead/infra-runtime-be/initial-prompt.md"),
+            'REPO_URL="https://git.moleculesai.app/molecule-ai/molecule-core.git"\n'
+            "ln -sfn /workspace/repos/molecule-core /workspace/repo\n",
+        )
+        self.assertTrue(any("wrong-bootstrap-repo" in error for error in errors), errors)
+
+    def test_shared_rules_follow_current_documentation_policy_and_roles(self) -> None:
+        stale = """`Molecule-AI/internal/marketing/`
+`Molecule-AI/internal/retrospectives/`
+technical-writer -> app-docs-lead
+"""
+        errors = self.validator.shared_rules_errors(stale)
+        joined = "\n".join(errors)
+        self.assertIn("stale-documentation-path", joined)
+        self.assertIn("stale-workspace-name", joined)
 
     def test_enabled_channel_without_literal_allowlist_fails_closed(self) -> None:
         doc = yaml.safe_load((FIXTURES / "fail-open-channel.yaml").read_text())

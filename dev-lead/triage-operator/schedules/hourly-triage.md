@@ -12,10 +12,10 @@ STEP 0 — Guards + learnings
 - tail -20 ~/.claude/projects/*/memory/cron-learnings.jsonl 2>/dev/null
 
 STEP 1 — List (cover ALL assigned repos)
-- gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
-- gitea_api 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
-- gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
-- gitea_api 'repos/molecule-ai/molecule-controlplane/issues?state=open&type=issues&limit=50' | python3 -m json.tool
+- gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
+- gitea_api GET 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
+- gitea_api GET 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
+- gitea_api GET 'repos/molecule-ai/molecule-controlplane/issues?state=open&type=issues&limit=50' | python3 -m json.tool
 NOTE: Triage Operator 2 handles molecule-app, docs, landingpage, tenant-proxy,
 workspace-runtime, molecule-ci, molecule-ai-status, plugin repos, template repos.
 Coordinate to avoid overlap.

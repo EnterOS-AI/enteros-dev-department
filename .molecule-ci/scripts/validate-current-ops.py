@@ -17,6 +17,12 @@ IMPORT_RULES_MARKER = "## Critical operations contract (import-local)"
 ALLOWED_CHANNEL_KEYS = {"type", "config", "allowed_users", "enabled"}
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^]]+\]\(([^)]+)\)")
 XTRACE_SAFE_GIT_HELPER = re.compile(r"gitea_git\(\)\s*\(\s*\n\s*set \+x\b")
+BOOTSTRAP_REPOSITORIES = {
+    "dev-lead/infra-lead/initial-prompt.md": "molecule-ai-workspace-runtime",
+    "dev-lead/infra-lead/infra-runtime-be/initial-prompt.md": "molecule-ai-workspace-runtime",
+    "dev-lead/infra-lead/infra-sre/initial-prompt.md": "molecule-ai-status",
+    "dev-lead/sdk-lead/plugin-dev/initial-prompt.md": "molecule-ai-workspace-runtime",
+}
 
 
 class TemplateLoader(yaml.SafeLoader):
@@ -66,7 +72,16 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
             "stale-core-layout",
             re.compile(
                 r"(?:/workspace/repo/platform\b|\bcd\s+platform\b|"
-                r"\bplatform/internal/|\bplatform/server\b|platform/ \(Go\))"
+                r"\bplatform/internal/|\bplatform/server\b|platform/ \(Go\)|"
+                r"\b(?:the\s+)?platform/\s+directory\b)"
+            ),
+        ),
+        (
+            "stale-runtime-root",
+            re.compile(
+                r"(?:\bPython\s+workspace-template\s+tests\b|"
+                r"(?<!molecule-ai-)\bworkspace-template/|"
+                r"\bworkspace/plugins_registry/)"
             ),
         ),
         (
@@ -78,6 +93,37 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
             re.compile(r"https?://(?:localhost|host\.docker\.internal):8080\b"),
         ),
         ("stale-docs-stack", re.compile(r"\bNextra\b", re.IGNORECASE)),
+        (
+            "unpaginated-org-inventory",
+            re.compile(r"orgs/molecule-ai/repos\?[^\s'\"]*limit=(?:100|[6-9][0-9])"),
+        ),
+        (
+            "unqualified-ci-on-merge",
+            re.compile(r"\bdeployments?\s+(?:are|is)\s+CI-on-merge\b", re.I),
+        ),
+        (
+            "generic-delegation-target",
+            re.compile(
+                r"(?:delegate_task\s+to\s+(?:your\s+)?team lead\b|"
+                r"tasks?\s+from\s+(?:your\s+)?team lead\b)",
+                re.IGNORECASE,
+            ),
+        ),
+        (
+            "literal-gitea-endpoint-placeholder",
+            re.compile(
+                r"\bgitea_api\s+(?:GET|POST|PUT|PATCH|DELETE)\s+"
+                r"[\"'][^\"']*<[^>\n]+>",
+                re.IGNORECASE,
+            ),
+        ),
+        (
+            "bare-approval-tag",
+            re.compile(
+                r"\[(?:qa|security-auditor|uiux)-agent\]\s+(?:APPROVED|N/A)",
+                re.IGNORECASE,
+            ),
+        ),
     ]
     if relative_text.startswith("dev-lead/cp-lead/"):
         patterns.append(
@@ -109,6 +155,83 @@ def git_helper_errors(relative: Path, text: str) -> list[str]:
             "and disable xtrace before credential expansion"
         ]
     return []
+
+
+def bootstrap_errors(relative: Path, text: str) -> list[str]:
+    """Require roles with a primary owned repository to bootstrap that repository."""
+
+    relative_text = relative.as_posix()
+    expected = BOOTSTRAP_REPOSITORIES.get(relative_text)
+    if expected is None:
+        return []
+    required = [
+        f"https://git.moleculesai.app/molecule-ai/{expected}.git",
+        f"/workspace/repos/{expected}",
+        f"ln -sfn /workspace/repos/{expected} /workspace/repo",
+    ]
+    missing = [needle for needle in required if needle not in text]
+    if not missing:
+        return []
+    return [
+        f"{relative_text}: [wrong-bootstrap-repo] expected {expected!r}; "
+        f"missing {missing}"
+    ]
+
+
+def deployment_errors(relative: Path, text: str) -> list[str]:
+    """Require repository-specific deployment truth in every system prompt."""
+
+    relative_text = relative.as_posix()
+    errors: list[str] = []
+    if "Merge to `main` triggers CI deployment" in text:
+        errors.append(f"{relative_text}: [unqualified-main-deploy]")
+    lowered = text.lower()
+    required = (
+        "checked-in publisher workflow",
+        "documentation publishing is manual",
+        "molecule-app",
+        "landingpage",
+        "do not deploy",
+    )
+    for needle in required:
+        if needle.lower() not in lowered:
+            errors.append(
+                f"{relative_text}: [missing-deployment-contract] {needle!r}"
+            )
+    return errors
+
+
+def org_inventory_errors(relative: Path, text: str) -> list[str]:
+    """Require every organization-wide repository inventory to exhaust pagination."""
+
+    if "orgs/molecule-ai/repos" not in text:
+        return []
+    required = ("page=1", "while", "limit=50", "page=$((page + 1))")
+    missing = [needle for needle in required if needle not in text]
+    if not missing:
+        return []
+    return [
+        f"{relative}: [unpaginated-org-inventory] missing pagination markers {missing}"
+    ]
+
+
+def shared_rules_errors(text: str) -> list[str]:
+    """Keep shared documentation routing aligned with current policy and roles."""
+
+    errors: list[str] = []
+    for stale in (
+        "Molecule-AI/internal/marketing/",
+        "Molecule-AI/internal/retrospectives/",
+        "internal/marketing/",
+        "internal/retrospectives/",
+        "internal/devrel-drafts/",
+    ):
+        if stale in text:
+            errors.append(f"SHARED_RULES.md: [stale-documentation-path] {stale!r}")
+    for stale in ("app-docs-lead", "research-analyst", "devrel-engineer"):
+        if stale in text:
+            errors.append(f"SHARED_RULES.md: [stale-workspace-name] {stale!r}")
+    return errors
 
 
 def channel_errors(relative: Path, document: Any) -> list[str]:
@@ -274,6 +397,7 @@ def validate_repository(root: Path = DEFAULT_ROOT) -> list[str]:
     for path in sorted(set(active_paths)):
         text = path.read_text(encoding="utf-8")
         errors.extend(instruction_errors(path.relative_to(root), text))
+        errors.extend(org_inventory_errors(path.relative_to(root), text))
         if path.suffix.lower() == ".md":
             errors.extend(
                 markdown_link_errors(root, path, _nearest_files_dir(path, files_dirs))
@@ -281,6 +405,7 @@ def validate_repository(root: Path = DEFAULT_ROOT) -> list[str]:
 
     for initial in sorted((root / "dev-lead").rglob("initial-prompt.md")):
         text = initial.read_text(encoding="utf-8")
+        errors.extend(bootstrap_errors(initial.relative_to(root), text))
         if "git clone" in text or "gitea_git clone" in text:
             errors.extend(git_helper_errors(initial.relative_to(root), text))
             if "remote set-url origin" not in text:
@@ -291,9 +416,39 @@ def validate_repository(root: Path = DEFAULT_ROOT) -> list[str]:
             _require(
                 text,
                 initial.relative_to(root).as_posix(),
-                ['endpoint="$1"', "shift", '"$@"'],
+                [
+                    'method="$1"',
+                    'endpoint="$2"',
+                    'case "$method" in',
+                    '*://*',
+                    '*%25*',
+                    'cr=$(printf "\\\\r_")',
+                    "*/../*",
+                    '--request "$method"',
+                    '-- "$url"',
+                ],
                 errors,
             )
+
+    for system_prompt in sorted((root / "dev-lead").rglob("system-prompt.md")):
+        text = system_prompt.read_text(encoding="utf-8")
+        errors.extend(deployment_errors(system_prompt.relative_to(root), text))
+        _require(
+            text,
+            system_prompt.relative_to(root).as_posix(),
+            [
+                'method="$1"',
+                'endpoint="$2"',
+                'case "$method" in',
+                '*://*',
+                '*%25*',
+                'cr=$(printf "\\\\r_")',
+                "*/../*",
+                '--request "$method"',
+                '-- "$url"',
+            ],
+            errors,
+        )
 
     local_setup = (root / ".molecule-ci" / "scripts" / "local-e2e-setup.sh").read_text()
     _require(
@@ -320,6 +475,7 @@ def validate_repository(root: Path = DEFAULT_ROOT) -> list[str]:
     shared = (root / "SHARED_RULES.md").read_text(encoding="utf-8")
     _forbid(shared, "SHARED_RULES.md", ["GH_TOKEN", "GitHub App installation token", "Production AWS/Fly/Vercel keys", "molecule-monorepo/.github/workflows"], errors)
     _require(shared, "SHARED_RULES.md", ["https://git.moleculesai.app", "https://key.moleculesai.app", "registry.moleculesai.app", "PR targeting `main`"], errors)
+    errors.extend(shared_rules_errors(shared))
 
     for path in active_paths:
         if not path.is_file():

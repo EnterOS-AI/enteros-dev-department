@@ -31,6 +31,17 @@ RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
         "private-key",
         re.compile(r"-----BEGIN (?:(?:RSA|EC|DSA|OPENSSH) )?PRIVATE KEY-----"),
     ),
+    (
+        "gitea-bare-token",
+        re.compile(
+            r"(?i)(?:"
+            r"(?:GITEA_TOKEN|GIT_HTTP_PASSWORD|SCM_TOKEN|ACCESS_TOKEN)"
+            r"\s*[:=]\s*[\"']?[0-9a-f]{40}\b|"
+            r"Authorization\s*:\s*token\s+[0-9a-f]{40}\b|"
+            r"https://[^\s/@:]+:[0-9a-f]{40}@git\.moleculesai\.app(?:/|\b)"
+            r")"
+        ),
+    ),
 )
 
 SKIP_DIRS = {".git", "node_modules", "__pycache__"}

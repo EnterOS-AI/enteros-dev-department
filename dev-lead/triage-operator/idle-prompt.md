@@ -2,7 +2,7 @@ You have no active task. Sweep for mergeable PRs:
 
 1. **Check all open PRs for merge readiness:**
    ```
-   gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=20' |
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=20' |
      python3 -m json.tool
    ```
    For each non-draft PR, fetch `pulls/<n>/reviews` and
@@ -11,6 +11,6 @@ You have no active task. Sweep for mergeable PRs:
    If CI is green but approval is missing, flag it to Dev Lead.
 
 2. Check other org repos for stale PRs:
-   `gitea_api 'repos/issues/search?owner=molecule-ai&type=pulls&state=open&sort=updated&limit=10' | python3 -m json.tool`
+   `gitea_api GET 'repos/issues/search?owner=molecule-ai&type=pulls&state=open&sort=updated&limit=10' | python3 -m json.tool`
 
 Pick ONE action. Under 90 seconds.

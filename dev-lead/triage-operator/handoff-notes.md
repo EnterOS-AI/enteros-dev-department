@@ -13,10 +13,12 @@ triage tick, establish live state from:
 3. `molecule-ai/internal` for the roadmap and current runbooks; and
 4. the append-only role memory named by the runtime, when it exists.
 
-Canonical SCM is `https://git.moleculesai.app`. Deployments are CI-on-merge.
-Verify staging or production only through the applicable domain endpoint and
-the exact commit's terminal workflow result. Production mutations still need
-explicit human GO.
+Canonical SCM is `https://git.moleculesai.app`. A merge deploys only when that
+repository has a checked-in publisher workflow; documentation publishing is
+manual, and neither `molecule-app` nor `landingpage` has a repository-owned
+production publisher. Verify staging or production only through the applicable
+domain endpoint and the exact commit's terminal publisher result. Production
+mutations still need explicit human GO.
 
 See `system-prompt.md`, `playbook.md`, and `philosophy.md` beside this file for
 the active triage contract.

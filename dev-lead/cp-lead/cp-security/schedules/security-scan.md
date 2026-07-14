@@ -36,13 +36,13 @@ Recurring security audit. Be thorough and incremental.
    - Rate limiting: tenant-scoped rate limits on all write endpoints
 
 6. OPEN-PR REVIEW:
-   gitea_api 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
    For each open PR diff, check for injection/auth-bypass/tenant-leak patterns.
 
 7. RECORD commit SHA: commit_memory "security-last-sha" with current HEAD.
 
 DELIVERABLE ROUTING (MANDATORY):
 a. File Gitea issues for CRITICAL/HIGH findings.
-b. delegate_task to team lead with summary.
+b. delegate_task to Controlplane Lead with summary.
 c. If clean: report "clean, audited <SHA_RANGE>".
 d. Save to memory "security-audit-latest".

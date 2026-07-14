@@ -74,6 +74,52 @@ class SecretScannerTests(unittest.TestCase):
             self.assertIn("private-key", result.stdout)
             self.assertNotIn(header, result.stdout + result.stderr)
 
+    def test_redacts_bare_gitea_token_in_credential_contexts(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            token = "a" * 40
+            target = root / "bootstrap.sh"
+            clone_prefix = "https://oauth2:"
+            target.write_text(
+                f'GITEA_TOKEN="{token}"\n'
+                f'git clone "{clone_prefix}{token}@git.moleculesai.app/molecule-ai/internal.git"\n',
+                encoding="utf-8",
+            )
+
+            result = self.run_scanner(root)
+
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("gitea-bare-token", result.stdout)
+            self.assertNotIn(token, result.stdout + result.stderr)
+            self.assertNotIn(token[:20], result.stdout + result.stderr)
+
+    def test_bare_commit_sha_is_not_a_token_finding(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sha = "b" * 40
+            (root / "release.md").write_text(
+                f"Verified commit `{sha}` on main.\n", encoding="utf-8"
+            )
+
+            result = self.run_scanner(root)
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_redacts_bare_gitea_token_in_authorization_header(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            token = "b" * 40
+            (root / "request.txt").write_text(
+                f"Authorization: token {token}\n",
+                encoding="utf-8",
+            )
+
+            result = self.run_scanner(root)
+
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("gitea-bare-token", result.stdout)
+            self.assertNotIn(token, result.stdout + result.stderr)
+
     def test_clean_tree_passes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

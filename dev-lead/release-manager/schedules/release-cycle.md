@@ -9,7 +9,7 @@ Release-readiness cycle. Run every 30 minutes.
    and its terminal conclusion; do not treat a queued or missing check as green.
 
 2. CHECK BLOCKERS:
-   gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
    Confirm the required security and integration evidence is current. If a
    blocker exists, report the evidence and stop release preparation.
 
@@ -20,9 +20,10 @@ Release-readiness cycle. Run every 30 minutes.
    merge or has a production publisher.
 
 4. PREPARE A RELEASE PR WHEN ASSIGNED:
+   VERSION="${VERSION:?set VERSION to the approved release version}"
    git switch main
    gitea_git pull --ff-only
-   git switch -c release/<version>
+   git switch -c "release/$VERSION"
    Update version and changelog files, run repository tests, push the branch,
    and open a PR targeting main. Never push or merge directly to main.
 

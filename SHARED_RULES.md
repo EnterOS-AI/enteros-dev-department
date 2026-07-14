@@ -35,9 +35,9 @@ from your initial prompt and keep every saved remote credential-free.
 
 Merges to `main` trigger deployment only in repositories that have a checked-in
 publisher workflow. Verify the workflow and its terminal result for the target
-repository before saying a change is deployed. In particular, documentation
-publishing remains manual and `molecule-app` has no repository-owned production
-publisher; a merge or successful build alone is not proof that either is live.
+repository before saying a change is deployed. Documentation publishing remains
+manual, while `molecule-app` and `landingpage` have no repository-owned production
+publisher; their merges and successful builds do not deploy either site.
 
 ---
 
@@ -85,7 +85,7 @@ Show the iceberg, not the tip. The blocker report should describe the *shape* of
 
 ## Philosophy 4 — Read the Team's Memory Before Reinventing
 
-The `Molecule-AI/internal` repo is the team's durable memory: `PLAN.md` (roadmap), `runbooks/` (ops procedures), `retrospectives/` (what we tried and learned), `security/` (known classes + backlog), `marketing/` (positioning, ecosystem-watch, competitor analysis).
+The `Molecule-AI/internal` repo is the team's durable memory: `PLAN.md` (roadmap), `runbooks/` (ops procedures), `historical/retrospectives/` (what we tried and learned), `historical/spikes/` (completed experiments), `security/` (known classes + backlog), `historical/marketing/` (positioning, ecosystem-watch, competitor analysis).
 
 Before any non-trivial decision (filing an issue, starting a refactor, claiming a phase exists, escalating a "novel" problem, beginning a new plan), search the team's memory:
 
@@ -102,7 +102,8 @@ fi
 grep -rE "<keywords>" /tmp/internal --include="*.md"
 
 # Or list contents of an area directly via Gitea API
-gitea_api 'repos/molecule-ai/internal/contents/<area>/?ref=main' | python3 -m json.tool
+AREA=historical/marketing
+gitea_api GET "repos/molecule-ai/internal/contents/$AREA/?ref=main" | python3 -m json.tool
 ```
 
 If the topic is in `internal/`, read it — your past selves and peer agents have already worked on it. If it isn't, your work belongs there *afterwards*.
@@ -166,11 +167,12 @@ Never push directly to `main`. Every change follows this workflow:
 1. **Security audit, incident, vulnerability, exploit?** → `Molecule-AI/internal/security/`
 2. **Contains AWS IDs, Railway IDs, customer slugs, prod env vars, Stripe IDs?** → Redact OR move to `Molecule-AI/internal/runbooks/`
 3. **Unshipped plan, roadmap, design spec, competitor recon?** → `Molecule-AI/internal/product/` or `internal/research/`
-4. **Marketing/sales/pricing strategy?** → `Molecule-AI/internal/marketing/`
+4. **Marketing/sales/pricing strategy?** → `Molecule-AI/internal/historical/marketing/`
 5. **Runbook with tenant-specific steps?** → `Molecule-AI/internal/runbooks/`
-6. **Retrospective, team observation?** → `Molecule-AI/internal/retrospectives/`
-7. **User-facing, API reference, tutorial, blog, architecture overview?** → Public repo (`docs/`, template README, etc.)
-8. **Default:** `Molecule-AI/internal` — when in doubt, internal.
+6. **Retrospective, team observation?** → `Molecule-AI/internal/historical/retrospectives/`
+7. **Completed spike or experiment record?** → `Molecule-AI/internal/historical/spikes/`
+8. **User-facing, API reference, tutorial, blog, architecture overview?** → Public repo (`docs/`, template README, etc.)
+9. **Default:** `Molecule-AI/internal` — when in doubt, internal.
 
 **Public doc rules:**
 - Assume every reader is a competitor. Don't reveal where our prod lives.
@@ -207,15 +209,22 @@ fi
 
 cd ~/repos/internal
 gitea_git pull --ff-only origin main
-git checkout -b <my-role>/<topic>-<date>     # e.g. pmm/phase34-positioning-2026-05-01
-mkdir -p <area>                               # research, marketing, runbooks, etc.
-$EDITOR <area>/<slug>.md                      # write your content
-git add <area>/<slug>.md
-git commit -m "<area>: add <slug>"
+ROLE_SLUG="${ROLE_SLUG:?set ROLE_SLUG to your delivered role slug}"
+TOPIC_SLUG="${TOPIC_SLUG:?set TOPIC_SLUG to a short branch-safe topic}"
+AREA="${AREA:?set AREA to research, historical/marketing, historical/retrospectives, historical/spikes, runbooks, etc.}"
+SLUG="${SLUG:?set SLUG to the document filename without .md}"
+TITLE="${TITLE:?set TITLE to the pull-request title}"
+BODY="${BODY:?set BODY to the pull-request body}"
+DATE_UTC=$(date -u +%F)
+git checkout -b "$ROLE_SLUG/$TOPIC_SLUG-$DATE_UTC"
+mkdir -p "$AREA"
+"${EDITOR:-vi}" "$AREA/$SLUG.md"
+git add -- "$AREA/$SLUG.md"
+git commit -m "$AREA: add $SLUG"
 gitea_git push -u origin HEAD
 BRANCH=$(git branch --show-current)
-PAYLOAD=$(BRANCH="$BRANCH" python3 -c 'import json,os; print(json.dumps({"base":"main","head":os.environ["BRANCH"],"title":"<title>","body":"<body>"}))')
-gitea_api 'repos/molecule-ai/internal/pulls' -X POST -H 'Content-Type: application/json' --data "$PAYLOAD"
+PAYLOAD=$(BRANCH="$BRANCH" TITLE="$TITLE" BODY="$BODY" python3 -c 'import json,os; print(json.dumps({"base":"main","head":os.environ["BRANCH"],"title":os.environ["TITLE"],"body":os.environ["BODY"]}))')
+gitea_api POST 'repos/molecule-ai/internal/pulls' "$PAYLOAD"
 ```
 
 The friction here is intentional. Public space and internal space are
@@ -280,7 +289,7 @@ This breaks the cascade where Token-Expiry-At-Lead → Lead-Failed-At-PM → PM-
 
 Before posting "Phase X ships date Y" or "needs decision on Z":
 
-1. Find the phase definition in `internal/PLAN.md` or `internal/marketing/roadmap.md`
+1. Find the phase definition in `internal/PLAN.md` or `internal/historical/marketing/roadmap.md`
 2. If the phase doesn't exist there, **it doesn't exist**. Don't invent it. Don't escalate about it.
 3. If the decision genuinely needs CEO input, post once to `#ceo-feed` with a link to the source doc — never re-post the same escalation within 4 hours.
 
@@ -308,9 +317,9 @@ The 24h log shows multiple "PM not responding to DMs" escalations within minutes
 
 ## Identity Tag Every External Comment
 
-Every Gitea PR description, issue body, comment, and Slack message MUST start with `[<your-role>-agent]` on the first line (e.g., `[core-lead-agent]`, `[devrel-engineer-agent]`).
+Every Gitea PR description, issue body, comment, and Slack message MUST start with `[<your-role>-agent]` on the first line (e.g., `[core-lead-agent]`, `[plugin-dev-agent]`).
 
-Tags are now ALSO mechanically required for PR approval gates. The PR Merge Approval Gate above parses comment bodies for `[<team>-qa-agent] APPROVED` / `[<team>-security-agent] APPROVED` / `[<team>-uiux-agent] APPROVED`; an unprefixed `[qa-agent]` is rejected by the lint workflow. Each persona has its own Gitea identity (post-2026-05-06; see `feedback_per_agent_gitea_identity_default`), so the tag reflects who actually authored the comment — and the gate enforces that the right roles spoke.
+Tags are now ALSO mechanically required for PR approval gates. The PR Merge Approval Gate accepts only the delivered reviewer tags named below; bare or invented role tags are rejected. Each persona has its own Gitea identity (post-2026-05-06; see `feedback_per_agent_gitea_identity_default`), so the tag reflects who actually authored the comment — and the gate enforces that the right roles spoke.
 
 ## Merge Authority — Leads Merge in Their Domain
 
@@ -329,9 +338,9 @@ If you're an engineer and find yourself preparing a pull-request merge request, 
 Before a Lead calls `POST /repos/{owner}/{repo}/pulls/{index}/merge`, **all four** of these must be on the PR:
 
 1. **All required CI checks green** — query the PR's `head.sha`, then `GET /repos/{owner}/{repo}/commits/{sha}/status` and verify every gating context. For molecule-ai/internal + molecule-ai/molecule-core, `sop-tier-check / tier-check (pull_request)` enforces the §SOP-6 tier→team approval contract; see `internal/runbooks/dev-sop.md`.
-2. **`[<team>-qa-agent] APPROVED`** — QA Engineer ran tests + verified per-changed-file coverage ≥ 100% (or `[<team>-qa-agent] N/A — docs/lint only` waiver). Tag MUST include the team prefix (e.g. `[core-qa-agent]`, `[cp-qa-agent]`, `[app-qa-agent]`) — bare `[qa-agent]` is rejected at lint.
-3. **`[<team>-security-agent] APPROVED`** — Security Auditor reviewed for CWE classes; OWASP-checklist clean. Required on every PR touching `auth/`, `middleware/`, DB/handler code, or any plugin install path. Use `N/A — non-security-touching` for the rest.
-4. **`[<team>-uiux-agent] APPROVED`** — UIUX Designer reviewed any canvas/UI changes. `N/A — backend-only` for non-UI PRs.
+2. **Owning QA approval:** `[core-qa-agent] APPROVED`, `[cp-qa-agent] APPROVED`, or `[app-qa-agent] APPROVED` — the matching delivered QA workspace ran the repository-specific tests and verified changed-file coverage. A lead may post its own explicit N/A waiver for docs/lint-only changes; do not forge a QA tag.
+3. **Owning security approval:** `[core-security-agent] APPROVED` or `[cp-security-agent] APPROVED` — the matching delivered security workspace reviewed for CWE classes and the OWASP checklist. Required on every PR touching `auth/`, `middleware/`, DB/handler code, or any plugin install path. A lead may post its own N/A waiver for non-security-touching changes.
+4. **UI/UX approval:** `[core-uiux-agent] APPROVED` from the delivered Core-UIUX workspace for Canvas or app UI changes. A lead may post its own N/A waiver for non-UI changes.
 
 Each reviewer MUST verify before posting APPROVED (see Observability Rules above).
 
@@ -389,7 +398,7 @@ Never escalate up two levels. Never sideways-escalate (Lead → Lead). Never inv
 When you wake up (cron tick or A2A delegation), check for queued work in priority order:
 
 1. **Direct A2A delegation** — finish first
-2. **Your label-scoped issue queue:** `gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&labels=area:<your-role>,needs-work&limit=50' | python3 -m json.tool`
+2. **Your label-scoped issue queue:** set `ROLE_LABEL` to your delivered role label, then run `gitea_api GET "repos/molecule-ai/molecule-core/issues?state=open&type=issues&labels=area:$ROLE_LABEL,needs-work&limit=50" | python3 -m json.tool`
 3. **Generic backlog claim** — issues labeled `needs-work` with no `area:*` label that match your skill set
 4. **Idle prompt** — only if 1+2+3 all returned nothing
 
@@ -429,7 +438,6 @@ devops/uiux) — those ship directly to `molecule-core`/`molecule-app`/
 | Role | Output lands in (eventually) |
 |---|---|
 | `content-marketer` | Blog posts, tutorials → `Molecule-AI/docs` |
-| `devrel-engineer` | Code demos, integration guides → `Molecule-AI/docs` |
 | `technical-writer` | Reference docs, API guides → `Molecule-AI/docs` |
 | `documentation-specialist` | Runbooks, internal SOPs → `Molecule-AI/docs` (if public) |
 | `seo-growth-analyst` | SEO briefs, keyword pages → `Molecule-AI/docs` + `landingpage` |
@@ -443,11 +451,11 @@ devops/uiux) — those ship directly to `molecule-core`/`molecule-app`/
 ### The workflow
 
 1. **Worker drafts content** and files a PR to **`Molecule-AI/internal`**
-   on an appropriate path (`internal/marketing/`, `internal/research/`,
-   `internal/devrel-drafts/`, etc.).
+   on an appropriate path (`internal/historical/marketing/`,
+   `internal/research/`, `internal/historical/spikes/`, etc.).
 2. **Worker pings their lead** via A2A delegation or the PR comment
-   naming the lead. Example: content-marketer → marketing-lead,
-   technical-writer → app-docs-lead, research-analyst → research-lead.
+   naming the delivered lead. Example: content-marketer → Marketing Lead,
+   technical-writer → App & Docs Lead, technical-researcher → Research Lead.
 3. **Lead reviews** the internal PR. If the content is on-brand and
    public-ready, the lead **opens a mirror PR on the public target
    repo** (`docs` / `landingpage`) copying the approved content.
@@ -469,13 +477,13 @@ devops/uiux) — those ship directly to `molecule-core`/`molecule-app`/
   `/marketing/`, `/docs/marketing/` still applies as a last-resort
   backstop for the rare case a worker mis-routes.
 
-### Lead responsibility (marketing-lead, research-lead, app-docs-lead, PMM)
+### Lead responsibility (Marketing Lead, Research Lead, App & Docs Lead, Product Marketing Manager)
 
 Your idle-prompt cron should include a step:
 
 ```bash
 # Check internal PRs from your workers
-gitea_api 'repos/molecule-ai/internal/pulls?state=open&limit=50' | python3 -m json.tool
+gitea_api GET 'repos/molecule-ai/internal/pulls?state=open&limit=50' | python3 -m json.tool
 ```
 
 If a worker has filed an internal PR and you haven't reviewed it yet,

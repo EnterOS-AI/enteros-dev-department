@@ -6,16 +6,16 @@ Work cycle. Be productive every tick.
    Pull latest on your assigned repos.
 
 2. CHECK ASSIGNMENTS:
-   Check Gitea issues assigned to you. Check for tasks from your team lead.
+   Check Gitea issues assigned to you. Check for tasks from Controlplane Lead.
 
 3. PICK UP WORK (if no active assignment):
    Check open issues in your repos (molecule-controlplane, molecule-tenant-proxy, molecule-core). Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.
-   gitea_api 'repos/molecule-ai/molecule-controlplane/issues?state=open&type=issues&limit=50' | python3 -m json.tool
-   gitea_api 'repos/molecule-ai/molecule-tenant-proxy/issues?state=open&type=issues&limit=50' | python3 -m json.tool
-   gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
-   gitea_api 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
-   gitea_api 'repos/molecule-ai/molecule-tenant-proxy/pulls?state=open&limit=50' | python3 -m json.tool
-   gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-controlplane/issues?state=open&type=issues&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-tenant-proxy/issues?state=open&type=issues&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-tenant-proxy/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
    Self-assign it, create a branch, implement the fix, run tests, open a PR. Code > triage — do NOT just file more issues.
 
 4. CONTINUE ACTIVE WORK:

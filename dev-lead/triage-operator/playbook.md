@@ -21,11 +21,11 @@ Never skip Step 0. The cron-learnings file is your primary "what did past-me alr
 ## Step 1 — List state
 
 ```bash
-gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
+gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
 
-gitea_api 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
+gitea_api GET 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
 
-gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
+gitea_api GET 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
 ```
 
 For each new PR and issue (compared to the previous tick's cron-learning), decide: PR-gate flow (Step 2) or issue-triage flow (Step 4).
@@ -38,7 +38,7 @@ For each open PR:
 
 ### Gate 1 — CI
 
-Read the PR's head SHA from `gitea_api "repos/molecule-ai/$REPO/pulls/$N"`, then inspect `repos/molecule-ai/$REPO/commits/$SHA/status` and the matching Actions run. All required checks green and the run terminal? Proceed. Any failure or cancellation? Investigate.
+Read the PR's head SHA from `gitea_api GET "repos/molecule-ai/$REPO/pulls/$N"`, then inspect `repos/molecule-ai/$REPO/commits/$SHA/status` and the matching Actions run. All required checks green and the run terminal? Proceed. Any failure or cancellation? Investigate.
 
 - **Cancelled** = often superseded by a newer push; identify the replacement run first. If a rerun is still needed, use the Actions rerun endpoint with an Actions-write-scoped token.
 - **Failed** = read the log through the Gitea Actions UI or API. If the failure is mechanical (lint, import order, flaky fixture), go to Step 2a. If it caught a real bug, go to Step 2d.
@@ -87,9 +87,8 @@ Wait for CI. If green, proceed to Step 2b. If still red, you misdiagnosed — ba
 All 7 gates pass + 0 🔴 from code-review + (for noteworthy PRs) cross-vendor-review agreement + (if auth/billing/schema/data-deletion) explicit CEO approval in the chat:
 
 ```bash
-printf '%s' '{"do":"merge","delete_branch_after_merge":true}' |
-  gitea_api "repos/molecule-ai/$REPO/pulls/$N/merge" \
-    -X POST -H 'Content-Type: application/json' --data-binary @-
+gitea_api POST "repos/molecule-ai/$REPO/pulls/$N/merge" \
+  '{"do":"merge","delete_branch_after_merge":true}'
 ```
 
 Never `--squash`, never `--rebase`, never `--admin` bypassing checks.

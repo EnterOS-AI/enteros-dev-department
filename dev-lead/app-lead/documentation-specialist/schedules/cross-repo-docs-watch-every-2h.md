@@ -17,7 +17,18 @@ echo "Window: $LAST_TICK → $NOW_TS"
 ## 2. ENUMERATE every Molecule-AI repo (live list, don't trust the prior cache)
 
 ```bash
-gitea_api 'orgs/molecule-ai/repos?limit=100' > /tmp/org-repos.json
+: > /tmp/org-repos.jsonl
+page=1
+while :; do
+  PAGE_JSON=$(gitea_api GET "orgs/molecule-ai/repos?page=$page&limit=50") || exit 1
+  COUNT=$(printf '%s' "$PAGE_JSON" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))') || exit 1
+  [ "$COUNT" -eq 0 ] && break
+  printf '%s' "$PAGE_JSON" |
+    python3 -c 'import json,sys; [print(json.dumps(row, separators=(",", ":"))) for row in json.load(sys.stdin)]' \
+    >> /tmp/org-repos.jsonl
+  [ "$COUNT" -lt 50 ] && break
+  page=$((page + 1))
+done
 ```
 
 Filter to repos that received commits since LAST_TICK — those are the ones
@@ -25,9 +36,11 @@ worth scanning. (Skipping idle repos keeps the cycle bounded.)
 
 ## 3. PER-REPO: list merged PRs in the window
 
-For each repo with recent activity:
+For each repo with recent activity, set `REPO` from the corresponding
+`/tmp/org-repos.jsonl` record and then query it:
 ```bash
-gitea_api 'repos/molecule-ai/<repo>/pulls?state=closed&limit=50' |
+REPO="${REPO:?set REPO to a repository name from the live inventory}"
+gitea_api GET "repos/molecule-ai/$REPO/pulls?state=closed&limit=50" |
   LAST_TICK="$LAST_TICK" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if p.get("merged_at") and p["merged_at"] >= os.environ["LAST_TICK"]], indent=2))'
 ```
 
@@ -103,7 +116,8 @@ commit_memory(
 - **Privacy violations**: if you spot a public PR that leaks
   controlplane internals (file paths, internal endpoints, schema
   details), open a Critical issue on molecule-controlplane and
-  IMMEDIATELY notify Security Auditor via A2A.
+  notify CP-Security via A2A; use Core-Security instead when the leak is in
+  molecule-core, a runtime, or a plugin repository.
 
 ## DEFINITION OF DONE FOR THIS CYCLE
 
@@ -119,11 +133,11 @@ commit_memory(
    - known-issues.md — update when issues are resolved or new ones discovered.
    - runbooks/ — operational playbooks. Update when domains, CI-on-merge workflows, registries, or workspace-fleet behavior change.
    - security/ — threat models and findings. Sync with Security Auditor's audit outputs.
-   - retrospectives/ — session retrospectives. Add entries after major incidents or milestones.
+   - historical/retrospectives/ — session retrospectives. Add entries after major incidents or milestones.
    - ecosystem-watch.md, ecosystem-research-outcomes.md — sync with Research Lead outputs.
 
    Every 2h check:
-   gitea_api 'repos/molecule-ai/internal/pulls?state=open&limit=50' | python3 -m json.tool
-   gitea_api 'repos/molecule-ai/internal/commits?limit=3' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/internal/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/internal/commits?limit=3' | python3 -m json.tool
    If internal docs are stale versus the checked platform and deployment state, open a PR to fix them.
    NEVER copy internal content to public repos (molecule-core, docs). Privacy rule applies.

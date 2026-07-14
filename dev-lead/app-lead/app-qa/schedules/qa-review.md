@@ -26,7 +26,7 @@ QA review cycle. Be thorough and incremental.
    accessibility tests, run them explicitly and report any new violations.
 
 8. Review recent PRs for quality issues and test gaps:
-   gitea_api 'repos/molecule-ai/molecule-app/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-app/pulls?state=open&limit=50' | python3 -m json.tool
    For each PR: does it add/change code without adding/updating tests? Flag it.
 
 9. Check for regressions (run builds, look for errors):
@@ -36,6 +36,6 @@ QA review cycle. Be thorough and incremental.
 
 DELIVERABLE ROUTING (MANDATORY every cycle):
 a. For each failing test or coverage regression: FILE A GITEA ISSUE.
-b. delegate_task to your team lead with a summary.
+b. delegate_task to App & Docs Lead with a summary.
 c. If all clean: delegate_task with "qa clean on SHA <X>".
 d. Save to memory key "qa-audit-latest" as secondary record.

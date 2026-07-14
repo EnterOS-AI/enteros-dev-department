@@ -10,7 +10,7 @@ Recurring security audit. Be thorough and incremental.
 2. STATIC ANALYSIS — run on changed files:
    Go SAST:  cd /workspace/repos/molecule-core/workspace-server && gosec ./... 2>&1 | head -50
    Python:   cd /workspace/repos/molecule-core/workspace && bandit -r . 2>&1 | head -50
-   Gitea Actions: inspect the checked-in security workflow, then use `gitea_api 'repos/molecule-ai/molecule-core/actions/runs?limit=5' | python3 -m json.tool` and verify the matching head SHA and terminal conclusion.
+   Gitea Actions: inspect the checked-in security workflow, then use `gitea_api GET 'repos/molecule-ai/molecule-core/actions/runs?limit=5' | python3 -m json.tool` and verify the matching head SHA and terminal conclusion.
 
 3. SECRETS SCAN — check for hardcoded credentials:
    cd /workspace/repos/molecule-core
@@ -35,13 +35,13 @@ Recurring security audit. Be thorough and incremental.
    Teardown any DAST tooling after checks complete.
 
 7. OPEN-PR REVIEW:
-   gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
    For each open PR diff, check for injection/exec/unsafe patterns.
 
 8. RECORD commit SHA: commit_memory "security-last-sha" with current HEAD.
 
 DELIVERABLE ROUTING (MANDATORY):
 a. File Gitea issues for CRITICAL/HIGH findings.
-b. delegate_task to team lead with summary.
+b. delegate_task to Core Platform Lead with summary.
 c. If clean: report "clean, audited <SHA_RANGE>".
 d. Save to memory "security-audit-latest".
