@@ -61,6 +61,7 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
         ("unsupported-tea", re.compile(r"\btea\b")),
         ("unsupported-jq", re.compile(r"\bjq\b")),
         ("unsupported-curl-jq", re.compile(r"\bcurl\b[^\n]*\s--jq\b")),
+        ("unsafe-default-curlrc", re.compile(r"\bcurl\s+--config\b")),
         ("unsafe-token-xtrace-probe", re.compile(r"\$\{GITEA_TOKEN:-\}")),
         (
             "unsafe-token-argv",
@@ -124,6 +125,10 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
                 re.IGNORECASE,
             ),
         ),
+        (
+            "stale-app-lead-name",
+            re.compile(r"\bchild of App Lead\b"),
+        ),
     ]
     if relative_text.startswith("dev-lead/cp-lead/"):
         patterns.append(
@@ -141,6 +146,17 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
         for code, pattern in patterns:
             if pattern.search(line):
                 errors.append(f"{relative_text}:{lineno}: [{code}] {line.strip()}")
+        if "owning security tag:" in line.lower():
+            missing = [
+                tag
+                for tag in ("core-security-agent", "cp-security-agent")
+                if f"[{tag}] APPROVED" not in line
+            ]
+            if missing:
+                errors.append(
+                    f"{relative_text}:{lineno}: "
+                    f"[incomplete-security-approval-gate] missing APPROVED for {missing}"
+                )
     return errors
 
 
@@ -215,6 +231,25 @@ def org_inventory_errors(relative: Path, text: str) -> list[str]:
     ]
 
 
+def plugin_audit_errors(relative: Path, text: str) -> list[str]:
+    """Require the plugin audit to inspect the runtime-owned registry."""
+
+    required = (
+        "https://git.moleculesai.app/molecule-ai/molecule-ai-workspace-runtime.git",
+        "/workspace/repos/molecule-ai-workspace-runtime",
+        'gitea_git clone "$RUNTIME_URL" "$RUNTIME_DIR"',
+        "molecule_runtime/plugins_registry/",
+    )
+    missing = [needle for needle in required if needle not in text]
+    stale_core = "cd /workspace/repos/molecule-core" in text
+    if not missing and not stale_core:
+        return []
+    return [
+        f"{relative}: [stale-plugin-registry-repo] missing={missing} "
+        f"stale_core={stale_core}"
+    ]
+
+
 def shared_rules_errors(text: str) -> list[str]:
     """Keep shared documentation routing aligned with current policy and roles."""
 
@@ -231,6 +266,8 @@ def shared_rules_errors(text: str) -> list[str]:
     for stale in ("app-docs-lead", "research-analyst", "devrel-engineer"):
         if stale in text:
             errors.append(f"SHARED_RULES.md: [stale-workspace-name] {stale!r}")
+    if "/blob/main/" in text:
+        errors.append("SHARED_RULES.md: [stale-gitea-link] '/blob/main/'")
     return errors
 
 
@@ -424,6 +461,7 @@ def validate_repository(root: Path = DEFAULT_ROOT) -> list[str]:
                     '*%25*',
                     'cr=$(printf "\\\\r_")',
                     "*/../*",
+                    "curl -q --config",
                     '--request "$method"',
                     '-- "$url"',
                 ],
@@ -444,6 +482,7 @@ def validate_repository(root: Path = DEFAULT_ROOT) -> list[str]:
                 '*%25*',
                 'cr=$(printf "\\\\r_")',
                 "*/../*",
+                "curl -q --config",
                 '--request "$method"',
                 '-- "$url"',
             ],
@@ -476,6 +515,21 @@ def validate_repository(root: Path = DEFAULT_ROOT) -> list[str]:
     _forbid(shared, "SHARED_RULES.md", ["GH_TOKEN", "GitHub App installation token", "Production AWS/Fly/Vercel keys", "molecule-monorepo/.github/workflows"], errors)
     _require(shared, "SHARED_RULES.md", ["https://git.moleculesai.app", "https://key.moleculesai.app", "registry.moleculesai.app", "PR targeting `main`"], errors)
     errors.extend(shared_rules_errors(shared))
+
+    plugin_audit = (
+        root
+        / "dev-lead"
+        / "sdk-lead"
+        / "plugin-dev"
+        / "schedules"
+        / "plugin-ecosystem-audit.md"
+    )
+    errors.extend(
+        plugin_audit_errors(
+            plugin_audit.relative_to(root),
+            plugin_audit.read_text(encoding="utf-8"),
+        )
+    )
 
     for path in active_paths:
         if not path.is_file():

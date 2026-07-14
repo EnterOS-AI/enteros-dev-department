@@ -37,7 +37,7 @@ children:
   - !include ./release-manager/workspace.yaml
   - !include ./integration-tester/workspace.yaml
   - !include ./fullstack-engineer/workspace.yaml
-  # Documentation Specialist is already a child of App Lead. Triage Operator
+  # Documentation Specialist is already a child of App & Docs Lead. Triage Operator
   # is a direct child here; adding either role under a second parent would make
   # the strict tree validator reject a duplicate-parent claim.
   - !include ./triage-operator/workspace.yaml

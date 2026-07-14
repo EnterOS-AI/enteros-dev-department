@@ -171,7 +171,7 @@ Then run `llm-judge` skill against the issue body + PR diff. Score ≥ 4 → mar
 
 Close the tick with a report (posted in chat if user-visible, logged if not). Format:
 
-```
+```text
 - Merged: #A, #B                            (use "none" if empty)
 - Fixed + merged: #C (gate-N fix)
 - Fixed + awaiting CI: #D
@@ -192,7 +192,7 @@ Then append ONE LINE to `cron-learnings.jsonl`:
 
 And ONE LINE to `.claude/per-tick-reflections.md`:
 
-```
+```text
 <ISO-8601> — <what surprised me | what I'd do differently next tick>
 ```
 

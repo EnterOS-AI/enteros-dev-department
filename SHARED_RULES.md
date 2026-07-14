@@ -89,7 +89,7 @@ The `Molecule-AI/internal` repo is the team's durable memory: `PLAN.md` (roadmap
 
 Before any non-trivial decision (filing an issue, starting a refactor, claiming a phase exists, escalating a "novel" problem, beginning a new plan), search the team's memory:
 
-```
+```bash
 # Clone + grep is the durable code-search replacement. `gitea_git` is the
 # ephemeral helper from the role's initial prompt.
 INTERNAL_URL=https://git.moleculesai.app/molecule-ai/internal.git
@@ -99,7 +99,8 @@ if [ -d /tmp/internal/.git ]; then
 else
   gitea_git clone "$INTERNAL_URL" /tmp/internal
 fi
-grep -rE "<keywords>" /tmp/internal --include="*.md"
+KEYWORDS="${KEYWORDS:?set KEYWORDS to the terms you need to find}"
+grep -rE "$KEYWORDS" /tmp/internal --include="*.md"
 
 # Or list contents of an area directly via Gitea API
 AREA=historical/marketing
@@ -179,7 +180,7 @@ Never push directly to `main`. Every change follows this workflow:
 - Use generic placeholders: `<your-vpc-id>`, `acme`, `your-org` — never real customer names or account IDs.
 - Describe WHAT and HOW for self-hosters. Never describe WHERE our specific prod instance lives.
 
-**Full policy:** https://git.moleculesai.app/molecule-ai/internal/blob/main/DOCUMENTATION_POLICY.md
+**Full policy:** https://git.moleculesai.app/molecule-ai/internal/src/branch/main/DOCUMENTATION_POLICY.md
 
 ### Never write internal content to the public core repository
 

@@ -92,6 +92,16 @@ class CurrentOperationsContractTests(unittest.TestCase):
             pickup_errors,
         )
 
+        gate_errors = self.validator.instruction_errors(
+            Path("dev-lead/schedules/orchestrator-pulse.md"),
+            "The owning security tag: `[core-security-agent]` or "
+            "`[cp-security-agent] APPROVED`.",
+        )
+        self.assertTrue(
+            any("incomplete-security-approval-gate" in error for error in gate_errors),
+            gate_errors,
+        )
+
     def test_literal_placeholder_in_gitea_endpoint_is_rejected(self) -> None:
         errors = self.validator.instruction_errors(
             Path("dev-lead/core-lead/schedules/orchestrator-pulse.md"),
@@ -130,11 +140,30 @@ class CurrentOperationsContractTests(unittest.TestCase):
         stale = """`Molecule-AI/internal/marketing/`
 `Molecule-AI/internal/retrospectives/`
 technical-writer -> app-docs-lead
+https://git.moleculesai.app/molecule-ai/internal/blob/main/DOCUMENTATION_POLICY.md
 """
         errors = self.validator.shared_rules_errors(stale)
         joined = "\n".join(errors)
         self.assertIn("stale-documentation-path", joined)
         self.assertIn("stale-workspace-name", joined)
+        self.assertIn("stale-gitea-link", joined)
+
+    def test_plugin_audit_uses_runtime_plugin_registry(self) -> None:
+        stale = """cd /workspace/repos/molecule-core
+git log --oneline -- molecule_runtime/plugins_registry/
+"""
+        errors = self.validator.plugin_audit_errors(
+            Path("dev-lead/sdk-lead/plugin-dev/schedules/plugin-ecosystem-audit.md"),
+            stale,
+        )
+        self.assertTrue(any("stale-plugin-registry-repo" in e for e in errors), errors)
+
+    def test_workspace_comment_uses_delivered_app_lead_name(self) -> None:
+        errors = self.validator.instruction_errors(
+            Path("dev-lead/workspace.yaml"),
+            "Documentation Specialist is already a child of App Lead.",
+        )
+        self.assertTrue(any("stale-app-lead-name" in e for e in errors), errors)
 
     def test_enabled_channel_without_literal_allowlist_fails_closed(self) -> None:
         doc = yaml.safe_load((FIXTURES / "fail-open-channel.yaml").read_text())

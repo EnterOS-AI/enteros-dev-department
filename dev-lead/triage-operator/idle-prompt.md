@@ -1,7 +1,7 @@
 You have no active task. Sweep for mergeable PRs:
 
 1. **Check all open PRs for merge readiness:**
-   ```
+   ```bash
    gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=20' |
      python3 -m json.tool
    ```

@@ -41,18 +41,31 @@ gitea_api GET "repos/molecule-ai/$REPO/commits?limit=1" |
 - **No README or empty README**: write one
 - **No tests**: add basic tests
 
-## Step 4: Core pipeline check
+## Step 4: Runtime plugin pipeline check
 ```bash
-cd /workspace/repos/molecule-core
-gitea_git pull --ff-only
+RUNTIME_DIR=/workspace/repos/molecule-ai-workspace-runtime
+RUNTIME_URL=https://git.moleculesai.app/molecule-ai/molecule-ai-workspace-runtime.git
+mkdir -p /workspace/repos
+if [ -d "$RUNTIME_DIR/.git" ]; then
+  git -C "$RUNTIME_DIR" remote set-url origin "$RUNTIME_URL"
+  gitea_git -C "$RUNTIME_DIR" pull --ff-only
+else
+  gitea_git clone "$RUNTIME_URL" "$RUNTIME_DIR"
+fi
+cd "$RUNTIME_DIR"
 # Check for plugin pipeline changes
 git log --oneline --since="24 hours ago" -- molecule_runtime/plugins_registry/
 ```
 If pipeline changed, verify all plugins still install correctly.
 
 ## Step 5: Report
-```
-commit_memory "plugin-audit HH:MM — N repos, CI: X green / Y red, issues: Z open, acted on: <list>"
+```bash
+PLUGIN_COUNT="${PLUGIN_COUNT:?set PLUGIN_COUNT from the live inventory}"
+GREEN_COUNT="${GREEN_COUNT:?set GREEN_COUNT from the CI checks}"
+RED_COUNT="${RED_COUNT:?set RED_COUNT from the CI checks}"
+OPEN_ISSUE_COUNT="${OPEN_ISSUE_COUNT:?set OPEN_ISSUE_COUNT from the issue checks}"
+ACTED_ON="${ACTED_ON:-none}"
+commit_memory "plugin-audit $(date -u +%H:%M) — $PLUGIN_COUNT repos, CI: $GREEN_COUNT green / $RED_COUNT red, issues: $OPEN_ISSUE_COUNT open, acted on: $ACTED_ON"
 ```
 
 RULE: Do NOT just report numbers. If something is broken, FIX IT in this cycle.

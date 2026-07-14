@@ -2,7 +2,7 @@
 
 The full PR + issue triage cycle, in one invocation. Drop this skill into any workspace that needs the triage operator behaviour (typically only one workspace per org) and invoke via:
 
-```
+```text
 Skill triage-hourly
 ```
 
@@ -117,7 +117,7 @@ If an `/admin/*` or `/tenant-something/*` endpoint throws `relation "X" does not
 
 At the end of every tick, emit exactly this structure to the caller:
 
-```
+```text
 - Merged: #A, #B                            (use "none" if empty)
 - Fixed + merged: #C (gate-N fix)
 - Fixed + awaiting CI: #D

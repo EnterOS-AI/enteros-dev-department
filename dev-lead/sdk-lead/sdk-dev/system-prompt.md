@@ -68,11 +68,11 @@ gitea_api() (
     exec 3<<<"header = \"Authorization: token $GITEA_TOKEN\"
 header = \"Content-Type: application/json\""
     printf "%s" "$body" |
-      curl --config /dev/fd/3 -fsS -A curl/8.4.0 \
+      curl -q --config /dev/fd/3 -fsS -A curl/8.4.0 \
         --request "$method" --data-binary @- -- "$url"
   else
     printf "header = \"Authorization: token %s\"\n" "$GITEA_TOKEN" |
-      curl --config - -fsS -A curl/8.4.0 --request "$method" -- "$url"
+      curl -q --config - -fsS -A curl/8.4.0 --request "$method" -- "$url"
   fi
 )
 ```

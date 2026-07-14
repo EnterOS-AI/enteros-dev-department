@@ -27,7 +27,7 @@ STEP 4 — MERGE TEAM PRs (per SHARED_RULES.md rule 9 — you ARE the merger for
   - Verify all 4 gates from rule 10 are present:
     1. All required CI checks green (`GET commits/<head_sha>/status`)
     2. The owning QA tag: `[core-qa-agent] APPROVED`, `[cp-qa-agent] APPROVED`, or `[app-qa-agent] APPROVED` (or a lead-authored N/A waiver for docs)
-    3. The owning security tag: `[core-security-agent]` or `[cp-security-agent] APPROVED` (or a lead-authored N/A waiver)
+    3. The owning security tag: `[core-security-agent] APPROVED` or `[cp-security-agent] APPROVED` (or a lead-authored N/A waiver)
     4. `[core-uiux-agent] APPROVED` for UI changes (or a lead-authored N/A waiver)
   - If ALL four gates pass: `POST pulls/<N>/merge` with `{"do":"merge","delete_branch_after_merge":true}`
   - If any gate missing/failing: leave a `[dev-lead-agent] BLOCKED ON: <gate>` comment, ping the responsible reviewer, do NOT merge
