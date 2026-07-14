@@ -12,10 +12,10 @@ STEP 0 — Guards + learnings
 - tail -20 ~/.claude/projects/*/memory/cron-learnings.jsonl 2>/dev/null
 
 STEP 1 — List (cover ALL assigned repos)
-- tea pr list --repo molecule-ai/molecule-core --state open --json number,title,author,isDraft,mergeable,statusCheckRollup,files
-- tea pr list --repo molecule-ai/molecule-controlplane --state open --json number,title,author,isDraft,mergeable,statusCheckRollup
-- tea issue list --repo molecule-ai/molecule-core --state open --json number,title,assignees,labels,createdAt,comments
-- tea issue list --repo molecule-ai/molecule-controlplane --state open --json number,title,assignees,labels,createdAt,comments
+- gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
+- gitea_api 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
+- gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
+- gitea_api 'repos/molecule-ai/molecule-controlplane/issues?state=open&type=issues&limit=50' | python3 -m json.tool
 NOTE: Triage Operator 2 handles molecule-app, docs, landingpage, tenant-proxy,
 workspace-runtime, molecule-ci, molecule-ai-status, plugin repos, template repos.
 Coordinate to avoid overlap.
@@ -78,7 +78,7 @@ of spamming PM.
 STEP 2 — 7-gate PR verification (each PR in turn)
 - Gates: CI, build, tests, security, design, line-review, Playwright-if-canvas
 - Mechanical fix on-branch + commit fix(gate-N) + push + poll CI
-- Merge (tea pr merge --merge --delete-branch) ONLY if:
+- Merge through the Gitea pull-request merge endpoint with `{"do":"merge","delete_branch_after_merge":true}` ONLY if:
     all 7 gates pass + 0 red from code-review +
     NOT auth/billing/schema/data-deletion (those hold for CEO)
 - BEFORE --delete-branch: check for downstream stacked PRs

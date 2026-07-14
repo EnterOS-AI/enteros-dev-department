@@ -1,96 +1,87 @@
 #!/usr/bin/env python3
+"""Scan every committed text file for credential-shaped values.
+
+Findings intentionally contain only a rule identifier and source location. The
+matched bytes are never returned or printed, so a detection cannot turn a
+credential leak into a CI-log leak.
 """
-Check for leaked credentials in the repo.
-Uses context-aware matching to avoid false positives in documentation/examples.
-"""
+
+from __future__ import annotations
+
 import os
 import re
 import sys
 from pathlib import Path
 
-# Patterns that match real credentials but also common doc examples.
-# We match the full assignment/value context to distinguish real from example.
-PATTERNS = [
-    # sk-ant- in quoted export or assignment context (real key: 64 hex chars)
-    re.compile(r'''["']sk-ant-[a-zA-Z0-9]{50,}["']'''),
-    # ghp_ GitHub token (37+ chars after prefix)
-    re.compile(r'''["']ghp_[a-zA-Z0-9]{36,}["']'''),
-    # AWS access key IDs
-    re.compile(r'''["']AKIA[A-Z0-9]{16}["']'''),
-    # AWS secret access keys (40-char)
-    re.compile(r'''["'][a-zA-Z0-9/+=]{40}["']'''),
-    # Stripe test keys
-    re.compile(r'''["']sk_test_[a-zA-Z0-9]{24,}["']'''),
-    # Generic Bearer tokens
-    re.compile(r'''["']Bearer\s+[a-zA-Z0-9_.-]{20,}["']'''),
-    # Generic PAT tokens (ghp_)
-    re.compile(r'''ghp_[a-zA-Z0-9]{36,}'''),
-    # Generic sk-ant- (standalone, non-dotted, real length)
-    re.compile(r'''sk-ant-[a-zA-Z0-9]{50,}'''),
-]
 
-# Extensions to scan
-EXTENSIONS = {'.yaml', '.yml', '.md', '.py', '.sh'}
+RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("anthropic-key", re.compile(r"sk-ant-[A-Za-z0-9]{50,}")),
+    ("github-pat", re.compile(r"ghp_[A-Za-z0-9]{36,}")),
+    ("aws-access-key", re.compile(r"AKIA[A-Z0-9]{16}")),
+    (
+        "aws-secret-key",
+        re.compile(
+            r"(?i)(?:aws_secret_access_key|secret_access_key)\s*[:=]\s*"
+            r"[\"']?[A-Za-z0-9/+=]{40}[\"']?"
+        ),
+    ),
+    ("stripe-secret-key", re.compile(r"sk_(?:test|live)_[A-Za-z0-9]{24,}")),
+    ("bearer-token", re.compile(r"Bearer\s+[A-Za-z0-9_.-]{20,}")),
+    (
+        "private-key",
+        re.compile(r"-----BEGIN (?:(?:RSA|EC|DSA|OPENSSH) )?PRIVATE KEY-----"),
+    ),
+)
 
-# Directories to skip entirely
-SKIP_DIRS = {'.molecule-ci', '.git', 'node_modules', '__pycache__'}
+SKIP_DIRS = {".git", "node_modules", "__pycache__"}
 
 
-def is_false_positive(line: str, match: str) -> bool:
-    """Heuristic: lines with ... or <example> or # comment-only are docs examples."""
-    # If the match is followed by "..." or surrounded by "<" ">" it's an example
-    ctx = line.lower()
-    if '...' in ctx:
-        return True
-    if '<example' in ctx or '</example' in ctx:
-        return True
-    if '#' in line and line.strip().startswith('#'):
-        # Pure comment line — likely a doc example
-        return True
-    return False
+def check_file(path: Path, root: Path) -> list[tuple[Path, int, str]]:
+    """Return redacted ``(relative path, line, rule)`` findings for ``path``."""
 
-
-def check_file(path: Path) -> list[str]:
-    """Return list of warnings for this file. Empty = clean."""
-    warnings = []
     try:
-        with open(path, 'r', encoding='utf-8', errors='ignore') as f:
-            lines = f.readlines()
-    except Exception:
-        return warnings
+        data = path.read_bytes()
+    except OSError:
+        return []
+    if b"\0" in data:
+        return []
 
-    for lineno, line in enumerate(lines, 1):
-        for pattern in PATTERNS:
-            for match in pattern.finditer(line):
-                if not is_false_positive(line, match.group(0)):
-                    warnings.append(
-                        f"  {path}:{lineno}: {match.group(0)[:40]}..."
-                    )
-    return warnings
+    text = data.decode("utf-8", errors="ignore")
+    relative = path.relative_to(root)
+    findings: list[tuple[Path, int, str]] = []
+    for lineno, line in enumerate(text.splitlines(), 1):
+        for rule, pattern in RULES:
+            if pattern.search(line):
+                findings.append((relative, lineno, rule))
+    return findings
 
 
-def main():
-    root = Path(os.environ.get('GITHUB_WORKSPACE', '.'))
-    all_warnings = []
+def scan(root: Path) -> list[tuple[Path, int, str]]:
+    """Scan all text-like files below ``root``, including dot directories/files."""
 
+    findings: list[tuple[Path, int, str]] = []
     for dirpath, dirnames, filenames in os.walk(root):
-        # Prune skipped dirs in-place
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        dirnames[:] = sorted(directory for directory in dirnames if directory not in SKIP_DIRS)
+        for filename in sorted(filenames):
+            findings.extend(check_file(Path(dirpath) / filename, root))
+    return findings
 
-        for filename in filenames:
-            if Path(filename).suffix not in EXTENSIONS:
-                continue
-            filepath = Path(dirpath) / filename
-            all_warnings.extend(check_file(filepath))
 
-    if all_warnings:
-        print("::error::Potential secret found in committed files:")
-        for w in all_warnings:
-            print(f"  {w}")
-        sys.exit(1)
-    else:
+def main() -> int:
+    root = Path(os.environ.get("GITHUB_WORKSPACE", ".")).resolve()
+    findings = scan(root)
+    if not findings:
         print("::notice::No secrets detected")
+        return 0
+
+    print("::error::Potential secrets found; values are redacted")
+    for relative, lineno, rule in findings:
+        print(
+            f"::error file={relative},line={lineno},title=Potential secret::"
+            f"{rule}: credential-shaped value detected"
+        )
+    return 1
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    sys.exit(main())

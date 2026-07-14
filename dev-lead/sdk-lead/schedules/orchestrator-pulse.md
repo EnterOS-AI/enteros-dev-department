@@ -3,11 +3,11 @@ IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (
 You are on a 5-minute orchestration pulse for the SDK & Plugins team.
 
 1. MERGE CI-GREEN PRs FIRST (before anything else):
-   tea pr list --repo molecule-ai/molecule-core --state open --json number,title,author,statusCheckRollup
-   tea pr list --repo molecule-ai/molecule-ai-sdk --state open --json number,title,author,statusCheckRollup
-   tea pr list --repo molecule-ai/molecule-mcp-server --state open --json number,title,author,statusCheckRollup
-   tea pr list --repo molecule-ai/molecule-cli --state open --json number,title,author,statusCheckRollup
-   For EACH CI-green PR: review the diff, if safe → tea pr merge <number> --merge --delete-branch
+   gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/molecule-ai-sdk/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/molecule-mcp-server/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/molecule-cli/pulls?state=open&limit=50' | python3 -m json.tool
+   For each CI-green, fully approved PR, merge through `POST pulls/<number>/merge` with `{"do":"merge","delete_branch_after_merge":true}`.
    Do NOT skip this step. Merging PRs is your #1 job.
 
 2. SCAN TEAM STATE: Check SDK-Dev, Plugin-Dev status.

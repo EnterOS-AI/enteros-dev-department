@@ -19,8 +19,8 @@ If you're tempted to relax a rule because it's slowing you down, read the incide
 ## 2. "Tool succeeded" ≠ "work is done"
 
 **Rule:** Always verify with a second signal before reporting done.
-- "PR created" → `tea pr view <number>`
-- "Tests pass locally" → `tea pr checks <number>` after push
+- "PR created" → fetch the pull request from the Gitea REST endpoint and verify its head SHA
+- "Tests pass locally" → verify the head commit status and matching Actions run after push
 - "Deploy succeeded" → terminal Gitea Actions result + expected registry artifact + domain endpoint check
 - "Migration ran" → migration evidence from the active deployment + direct schema verification through an authorized interface
 

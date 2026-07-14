@@ -3,13 +3,13 @@ IMPORTANT: Check molecule-ai/internal for the roadmap, known issues, and runbook
 Release-readiness cycle. Run every 30 minutes.
 
 1. CHECK CURRENT MAIN:
-   git fetch origin main
+   gitea_git fetch origin main
    MAIN_SHA=$(git rev-parse origin/main)
    Query the Gitea commit status for that exact SHA. Record each required check
    and its terminal conclusion; do not treat a queued or missing check as green.
 
 2. CHECK BLOCKERS:
-   tea issue list --repo molecule-ai/molecule-core --label "P0,P1" --state open --json number,title
+   gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
    Confirm the required security and integration evidence is current. If a
    blocker exists, report the evidence and stop release preparation.
 
@@ -21,7 +21,7 @@ Release-readiness cycle. Run every 30 minutes.
 
 4. PREPARE A RELEASE PR WHEN ASSIGNED:
    git switch main
-   git pull --ff-only
+   gitea_git pull --ff-only
    git switch -c release/<version>
    Update version and changelog files, run repository tests, push the branch,
    and open a PR targeting main. Never push or merge directly to main.

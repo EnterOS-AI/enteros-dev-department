@@ -12,7 +12,13 @@ a parent template bumps its pinned `!external` reference.
    assume a local container or direct database surface represents production.
 
 2. CHECK TEMPLATE SOURCE:
-   tea repo clone molecule-ai/molecule-dev-department /workspace/dev-department 2>/dev/null || (cd /workspace/dev-department && git pull --ff-only)
+   TEMPLATE_URL=https://git.moleculesai.app/molecule-ai/molecule-dev-department.git
+   if [ -d /workspace/dev-department/.git ]; then
+     git -C /workspace/dev-department remote set-url origin "$TEMPLATE_URL"
+     gitea_git -C /workspace/dev-department pull --ff-only
+   else
+     gitea_git clone "$TEMPLATE_URL" /workspace/dev-department
+   fi
    cd /workspace/dev-department
    python3 .molecule-ci/scripts/validate-tree.py --strict
    python3 .molecule-ci/scripts/validate-current-ops.py

@@ -8,15 +8,16 @@ Daily documentation maintenance. Two parallel objectives:
 (2) backfill stub pages on the docs site one at a time.
 
 SETUP:
-  cd /workspace/repo && git pull 2>/dev/null || true
-  cd /workspace/docs && git pull 2>/dev/null || true
-  cd /workspace/controlplane && git pull 2>/dev/null || true
+  gitea_git -C /workspace/repo pull --ff-only
+  gitea_git -C /workspace/docs pull --ff-only
+  gitea_git -C /workspace/controlplane pull --ff-only
 
 1a. PAIR RECENT PLATFORM PRS (last 24h):
    cd /workspace/repo
-   tea pr list --repo molecule-ai/molecule-core --state merged \
-     --search "merged:>$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)" \
-     --json number,title,files
+   SINCE=$(python3 -c 'from datetime import datetime,timedelta,timezone; print((datetime.now(timezone.utc)-timedelta(hours=24)).isoformat().replace("+00:00","Z"))')
+   gitea_api 'repos/molecule-ai/molecule-core/pulls?state=closed&limit=50' |
+     SINCE="$SINCE" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if p.get("merged_at") and p["merged_at"] >= os.environ["SINCE"]], indent=2))'
+   Fetch `pulls/<number>/files` for each selected PR before deciding its docs impact.
    For each merged PR that touches a public surface
    (workspace-server/internal/handlers/, canvas/, docs/, or README.md):
    - Identify which docs page(s) on the public site cover that surface.
@@ -29,9 +30,9 @@ SETUP:
 
 1b. PAIR RECENT CONTROLPLANE PRS (last 24h):
    cd /workspace/controlplane
-   tea pr list --repo molecule-ai/molecule-controlplane --state merged \
-     --search "merged:>$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)" \
-     --json number,title,files
+   gitea_api 'repos/molecule-ai/molecule-controlplane/pulls?state=closed&limit=50' |
+     SINCE="$SINCE" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if p.get("merged_at") and p["merged_at"] >= os.environ["SINCE"]], indent=2))'
+   Fetch `pulls/<number>/files` for each selected PR before deciding its docs impact.
    ⚠️  PRIVATE REPO. Two cases:
    (i) Internal-only change (handler, schema, deployment configuration,
        billing logic): update README.md + PLAN.md + any

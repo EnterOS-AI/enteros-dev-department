@@ -8,14 +8,15 @@ STEP 1 — CHECK CURRENT STATE:
   If a previous topic branch has unpushed work, finish and push it first.
   If it has no PR, open one targeting main. Then:
     git switch main
-    git pull --ff-only
+    gitea_git pull --ff-only
 
 STEP 2 — FIND WORK (prefer cross-cutting issues):
-  tea issue list --repo molecule-ai/molecule-core --state open --json number,title,labels,assignees --jq '.[] | select(.assignees | length == 0) | select(.title | test("fullstack|api.*canvas|websocket|endpoint.*ui|handler.*component"; "i")) | "#\(.number) \(.title)"'
+  gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
   Also consider issues that touch both workspace-server/ and canvas/.
 
 STEP 3 — SELF-ASSIGN:
-  tea issue edit <NUMBER> --repo molecule-ai/molecule-core --add-assignee @me
+  PAYLOAD=$(MOL_AGENT_PERSONA="${MOL_AGENT_PERSONA:?}" python3 -c 'import json,os; print(json.dumps({"assignees":[os.environ["MOL_AGENT_PERSONA"]]}))')
+  gitea_api 'repos/molecule-ai/molecule-core/issues/<NUMBER>' -X PATCH -H 'Content-Type: application/json' --data "$PAYLOAD"
 
 STEP 4 — WRITE CODE:
   git switch -c fix/issue-N-description
@@ -27,14 +28,16 @@ STEP 4 — WRITE CODE:
   git commit -m "fix: description (closes #N)"
 
 STEP 5 — PUSH + OPEN PR:
-  git fetch origin main
+  gitea_git fetch origin main
   git rebase origin/main
-  git push -u origin <branch>
-  tea pr create --base main --title "fix: description" --body "Closes #N"
+  gitea_git push -u origin <branch>
+  BRANCH=$(git branch --show-current)
+  PAYLOAD=$(BRANCH="$BRANCH" python3 -c 'import json,os; print(json.dumps({"base":"main","head":os.environ["BRANCH"],"title":"fix: description","body":"Closes #N"}))')
+  gitea_api 'repos/molecule-ai/molecule-core/pulls' -X POST -H 'Content-Type: application/json' --data "$PAYLOAD"
 
 STEP 6 — RETURN TO MAIN:
   git switch main
-  git pull --ff-only
+  gitea_git pull --ff-only
 
 RULES: All PRs target main. Never push directly to main. Both test suites must
 pass. Merge commits only.

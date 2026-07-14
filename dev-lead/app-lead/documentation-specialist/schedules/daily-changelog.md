@@ -14,12 +14,11 @@ review is needed. The separate manual production publish still must be verified.
 ```bash
 TODAY=$(date -u +%Y-%m-%d)
 mkdir -p /tmp/changelog-$TODAY
-for repo in $(tea repos ls --org molecule-ai --limit 100 --json name --jq '.[].name'); do
-  tea pr list --repo molecule-ai/$repo --state merged \
-    --search "merged:$TODAY" \
-    --json number,title,mergedAt,author,labels,body \
-    --limit 50 \
-    > /tmp/changelog-$TODAY/$repo.json
+REPOS=$(gitea_api 'orgs/molecule-ai/repos?limit=100' | python3 -c 'import json,sys; print("\n".join(r["name"] for r in json.load(sys.stdin)))')
+for repo in $REPOS; do
+  gitea_api "repos/molecule-ai/$repo/pulls?state=closed&limit=50" |
+    TODAY="$TODAY" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if (p.get("merged_at") or "").startswith(os.environ["TODAY"])], indent=2))' \
+    > "/tmp/changelog-$TODAY/$repo.json"
 done
 ```
 

@@ -4,12 +4,13 @@ You are on a 5-minute orchestration pulse for the Core Platform team. Per `SHARE
 
 1. MERGE PASS-THE-GATE PRs FIRST (the four-condition check):
    ```
-   tea pr list --repo molecule-ai/molecule-core --state open --output simple
+   gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
    ```
    For each open PR, fetch its review comments and CI rollup:
    ```
-   tea pr <N> --repo molecule-ai/molecule-core --comments
-   tea pr checks <N> --repo molecule-ai/molecule-core
+   gitea_api 'repos/molecule-ai/molecule-core/issues/<N>/comments' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/molecule-core/pulls/<N>/reviews' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/molecule-core/commits/<head_sha>/status' | python3 -m json.tool
    ```
    Merge ONLY if all four:
      - All required CI checks SUCCESS (`sop-tier-check / tier-check (pull_request)` and any sibling required check)
@@ -19,7 +20,7 @@ You are on a 5-minute orchestration pulse for the Core Platform team. Per `SHARE
 
    When all four hold:
    ```
-   tea pr merge <N> --repo molecule-ai/molecule-core --merge --delete-branch
+   gitea_api 'repos/molecule-ai/molecule-core/pulls/<N>/merge' -X POST -H 'Content-Type: application/json' --data '{"do":"merge","delete_branch_after_merge":true}'
    ```
    When any fails, post `[core-lead-agent] BLOCKED on <missing>: requesting <core-qa-agent|core-security-agent|core-uiux-agent>` and move on. Do NOT silently force-merge — force-merge fires `incident.force_merge` to Loki and reports to the orchestrator (see `internal/runbooks/audit-force-merge.scripts`).
 
@@ -34,7 +35,7 @@ You are on a 5-minute orchestration pulse for the Core Platform team. Per `SHARE
 
 4. SCAN BACKLOG for unassigned issues:
    ```
-   tea issue list --repo molecule-ai/molecule-core --state open --output simple
+   gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
    ```
    Match issue scope → role (per dispatch table below) and `delegate_task` to the right engineer (max 3 dispatches per pulse).
 

@@ -9,7 +9,7 @@ promotional spin on top of factual changes (e.g. blog post for a major release).
 ## 1. SETUP — record the cycle window
 
 ```bash
-LAST_TICK=$(recall_memory "doc-watch-last-tick" 2>/dev/null || echo '2 hours ago')
+LAST_TICK=$(recall_memory "doc-watch-last-tick" 2>/dev/null || python3 -c 'from datetime import datetime,timedelta,timezone; print((datetime.now(timezone.utc)-timedelta(hours=2)).isoformat().replace("+00:00","Z"))')
 NOW_TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 echo "Window: $LAST_TICK → $NOW_TS"
 ```
@@ -17,8 +17,7 @@ echo "Window: $LAST_TICK → $NOW_TS"
 ## 2. ENUMERATE every Molecule-AI repo (live list, don't trust the prior cache)
 
 ```bash
-tea repos ls --org molecule-ai --limit 100 --json name,description,updatedAt,visibility \
-  > /tmp/org-repos.json
+gitea_api 'orgs/molecule-ai/repos?limit=100' > /tmp/org-repos.json
 ```
 
 Filter to repos that received commits since LAST_TICK — those are the ones
@@ -28,10 +27,8 @@ worth scanning. (Skipping idle repos keeps the cycle bounded.)
 
 For each repo with recent activity:
 ```bash
-tea pr list --repo molecule-ai/<repo> --state merged \
-  --search "merged:>=${LAST_TICK}" \
-  --json number,title,mergedAt,files \
-  --limit 20
+gitea_api 'repos/molecule-ai/<repo>/pulls?state=closed&limit=50' |
+  LAST_TICK="$LAST_TICK" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if p.get("merged_at") and p["merged_at"] >= os.environ["LAST_TICK"]], indent=2))'
 ```
 
 For each merged PR, check `files`:
@@ -126,7 +123,7 @@ commit_memory(
    - ecosystem-watch.md, ecosystem-research-outcomes.md — sync with Research Lead outputs.
 
    Every 2h check:
-   tea pr list --repo molecule-ai/internal --state open --json number,title
-   curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/molecule-ai/internal/commits --jq '.[0:3] | .[] | "\(.sha[:8]) \(.commit.message | split("\n") | first)"'
+   gitea_api 'repos/molecule-ai/internal/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/internal/commits?limit=3' | python3 -m json.tool
    If internal docs are stale versus the checked platform and deployment state, open a PR to fix them.
    NEVER copy internal content to public repos (molecule-core, docs). Privacy rule applies.

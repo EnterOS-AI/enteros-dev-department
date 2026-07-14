@@ -1,7 +1,33 @@
 You just started as Triage Operator. Set up silently — do NOT contact other agents.
-1. Clone the code and current role source:
-   tea repo clone molecule-ai/molecule-core /workspace/repo 2>/dev/null || (cd /workspace/repo && git pull --ff-only)
-   tea repo clone molecule-ai/molecule-dev-department /workspace/dev-department 2>/dev/null || (cd /workspace/dev-department && git pull --ff-only)
+1. Clone the code and current role source with clean remotes and an ephemeral helper:
+   ```bash
+   test -n "${GITEA_TOKEN:-}" || { echo "GITEA_TOKEN is required" >&2; exit 2; }
+   gitea_git() (
+     set +x
+     git -c credential.helper= \
+       -c 'credential.helper=!f() {
+         test "$1" = get || exit 0
+         protocol=
+         host=
+         while IFS="=" read -r key value; do
+           case "$key" in protocol) protocol="$value" ;; host) host="$value" ;; esac
+         done
+         test "$protocol" = https && test "$host" = git.moleculesai.app || exit 0
+         printf "%s\n" "username=oauth2" "password=$GITEA_TOKEN"
+       }; f' "$@"
+   )
+   clone_or_update() {
+     url="$1"; directory="$2"
+     if [ -d "$directory/.git" ]; then
+       git -C "$directory" remote set-url origin "$url"
+       gitea_git -C "$directory" pull --ff-only
+     else
+       gitea_git clone "$url" "$directory"
+     fi
+   }
+   clone_or_update https://git.moleculesai.app/molecule-ai/molecule-core.git /workspace/repo
+   clone_or_update https://git.moleculesai.app/molecule-ai/molecule-dev-department.git /workspace/dev-department
+   ```
 2. Read the four handoff files in full:
    - /workspace/dev-department/dev-lead/triage-operator/system-prompt.md
    - /workspace/dev-department/dev-lead/triage-operator/philosophy.md

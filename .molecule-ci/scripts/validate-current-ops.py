@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Reject retired operational instructions in the live dev-department template.
-
-Point-in-time handoff notes and explicitly labelled rename history are allowed.
-The active prompts, schedules, and workspace declarations must match the current
-Gitea/domain/Infisical operating model and the org importer's channel shape.
-"""
+"""Validate the importable dev-department against current operations contracts."""
 
 from __future__ import annotations
 
@@ -12,19 +7,23 @@ import re
 import sys
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 import yaml
 
 
-ROOT = Path(__file__).resolve().parents[2]
-ERRORS: list[str] = []
+DEFAULT_ROOT = Path(__file__).resolve().parents[2]
+IMPORT_RULES_MARKER = "## Critical operations contract (import-local)"
+ALLOWED_CHANNEL_KEYS = {"type", "config", "allowed_users", "enabled"}
+MARKDOWN_LINK = re.compile(r"(?<!!)\[[^]]+\]\(([^)]+)\)")
+XTRACE_SAFE_GIT_HELPER = re.compile(r"gitea_git\(\)\s*\(\s*\n\s*set \+x\b")
 
 
 class TemplateLoader(yaml.SafeLoader):
-    """Parse past platform-resolved tags such as !include."""
+    """Parse platform-resolved tags such as ``!include`` as plain data."""
 
 
-def _template_tag(loader: yaml.Loader, tag_suffix: str, node: yaml.Node) -> Any:
+def _template_tag(loader: yaml.Loader, _tag_suffix: str, node: yaml.Node) -> Any:
     if isinstance(node, yaml.MappingNode):
         return loader.construct_mapping(node)
     if isinstance(node, yaml.SequenceNode):
@@ -35,231 +34,316 @@ def _template_tag(loader: yaml.Loader, tag_suffix: str, node: yaml.Node) -> Any:
 TemplateLoader.add_multi_constructor("!", _template_tag)
 
 
-def _read(relative: str) -> str:
-    return (ROOT / relative).read_text(encoding="utf-8")
+def _load_yaml(path: Path) -> Any:
+    return yaml.load(path.read_text(encoding="utf-8"), Loader=TemplateLoader)
 
 
-def _forbid(relative: str, needles: list[str]) -> None:
-    text = _read(relative)
-    for needle in needles:
-        if needle in text:
-            ERRORS.append(f"{relative}: retired instruction remains: {needle!r}")
+def instruction_errors(relative: Path, text: str) -> list[str]:
+    """Return current-operations violations in one active instruction file."""
+
+    errors: list[str] = []
+    relative_text = relative.as_posix()
+    patterns: list[tuple[str, re.Pattern[str]]] = [
+        (
+            "unsafe-git-auth",
+            re.compile(
+                r"https?://[^\s\"']*(?:x-access-token|oauth2)?[^\s\"']*"
+                r"\$\{?GITEA_TOKEN\}?[^\s\"']*@",
+                re.IGNORECASE,
+            ),
+        ),
+        ("unsupported-tea", re.compile(r"\btea\b")),
+        ("unsupported-jq", re.compile(r"\bjq\b")),
+        ("unsupported-curl-jq", re.compile(r"\bcurl\b[^\n]*\s--jq\b")),
+        (
+            "unsafe-token-argv",
+            re.compile(
+                r"(?:-H|--header)\s+[\"'][^\"']*\$\{?GITEA_TOKEN\}?[^\"']*[\"']"
+            ),
+        ),
+        (
+            "stale-core-layout",
+            re.compile(
+                r"(?:/workspace/repo/platform\b|\bcd\s+platform\b|"
+                r"\bplatform/internal/|\bplatform/server\b|platform/ \(Go\))"
+            ),
+        ),
+        (
+            "stale-root-guidance",
+            re.compile(r"(?:cat|read)\s+(?:the\s+)?/?workspace/repo/CLAUDE\.md", re.I),
+        ),
+        (
+            "stale-local-endpoint",
+            re.compile(r"https?://(?:localhost|host\.docker\.internal):8080\b"),
+        ),
+        ("stale-docs-stack", re.compile(r"\bNextra\b", re.IGNORECASE)),
+    ]
+    if relative_text.startswith("dev-lead/cp-lead/"):
+        patterns.append(
+            (
+                "stale-cp-stack",
+                re.compile(
+                    r"\bnpm\b|\bTypeScript\b|\bnode_modules\b|"
+                    r"--include=[\"']?\*\.(?:ts|js)",
+                    re.IGNORECASE,
+                ),
+            )
+        )
+
+    for lineno, line in enumerate(text.splitlines(), 1):
+        for code, pattern in patterns:
+            if pattern.search(line):
+                errors.append(f"{relative_text}:{lineno}: [{code}] {line.strip()}")
+    return errors
 
 
-def _require(relative: str, needles: list[str]) -> None:
-    text = _read(relative)
+def git_helper_errors(relative: Path, text: str) -> list[str]:
+    """Require credential helpers to isolate xtrace changes in a subshell."""
+
+    if "gitea_git" not in text:
+        return [f"{relative}: [missing-ephemeral-git-helper]"]
+    if not XTRACE_SAFE_GIT_HELPER.search(text):
+        return [
+            f"{relative}: [unsafe-git-xtrace] gitea_git must start a subshell "
+            "and disable xtrace before credential expansion"
+        ]
+    return []
+
+
+def channel_errors(relative: Path, document: Any) -> list[str]:
+    """Reject importer-invalid or fail-open native-channel declarations."""
+
+    if not isinstance(document, dict):
+        return []
+    channels = document.get("channels", [])
+    if not isinstance(channels, list):
+        return [f"{relative}: [invalid-channels] channels must be a list"]
+
+    errors: list[str] = []
+    for index, channel in enumerate(channels):
+        label = f"{relative}:channels[{index}]"
+        if not isinstance(channel, dict):
+            errors.append(f"{label}: [invalid-channel] entry must be a mapping")
+            continue
+        unknown = sorted(set(channel) - ALLOWED_CHANNEL_KEYS)
+        if unknown:
+            errors.append(f"{label}: [invalid-channel-keys] importer ignores {unknown}")
+        if not isinstance(channel.get("config"), dict):
+            errors.append(f"{label}: [invalid-channel-config] config must be a mapping")
+
+        enabled = channel.get("enabled", True)
+        allowed_users = channel.get("allowed_users")
+        if enabled is not False:
+            if not isinstance(allowed_users, list) or not allowed_users:
+                errors.append(
+                    f"{label}: [fail-open-channel] enabled channel needs a non-empty "
+                    "literal allowed_users list; disable it until molecule-core#4340"
+                )
+            elif any(not isinstance(item, str) or not item.strip() for item in allowed_users):
+                errors.append(f"{label}: [invalid-allowlist] entries must be non-empty strings")
+        if isinstance(allowed_users, list) and any(
+            isinstance(item, str) and "${" in item for item in allowed_users
+        ):
+            errors.append(
+                f"{label}: [unexpanded-allowlist] allowed_users does not support env "
+                "expansion; see molecule-core#4340"
+            )
+    return errors
+
+
+def routing_errors(routing: Any, workspace_names: set[str]) -> list[str]:
+    """Ensure every category-routing target names a delivered workspace."""
+
+    if not isinstance(routing, dict):
+        return ["dev-department.yaml: [invalid-routing] category_routing must be a mapping"]
+    errors: list[str] = []
+    for category, targets in routing.items():
+        if not isinstance(targets, list) or not targets:
+            errors.append(f"category_routing.{category}: [invalid-routing] needs targets")
+            continue
+        for target in targets:
+            if not isinstance(target, str) or target not in workspace_names:
+                errors.append(
+                    f"category_routing.{category}: [dangling-route] {target!r} is not a "
+                    "workspace name"
+                )
+    return errors
+
+
+def markdown_link_errors(root: Path, path: Path, files_dir: Path | None = None) -> list[str]:
+    """Validate local Markdown targets and imported-files boundary containment."""
+
+    errors: list[str] = []
+    text = path.read_text(encoding="utf-8")
+    for match in MARKDOWN_LINK.finditer(text):
+        raw_target = match.group(1).strip().strip("<>")
+        if not raw_target or raw_target.startswith(("#", "http://", "https://", "mailto:")):
+            continue
+        if raw_target in {"...", "…"}:
+            continue
+        target_text = unquote(raw_target.split("#", 1)[0].split("?", 1)[0])
+        if not target_text or target_text.startswith("/") or "<" in target_text:
+            continue
+        target = (path.parent / target_text).resolve()
+        line = text.count("\n", 0, match.start()) + 1
+        relative = path.relative_to(root)
+        if not target.exists():
+            errors.append(
+                f"{relative}:{line}: [broken-relative-link] {raw_target!r} does not exist"
+            )
+            continue
+        if files_dir is not None and not target.is_relative_to(files_dir.resolve()):
+            errors.append(
+                f"{relative}:{line}: [outside-files-dir] {raw_target!r} is not delivered "
+                f"with {files_dir.relative_to(root)}"
+            )
+    return errors
+
+
+def _workspace_contract(root: Path) -> tuple[set[str], list[Path], list[str]]:
+    names: set[str] = set()
+    files_dirs: list[Path] = []
+    errors: list[str] = []
+    for workspace in sorted((root / "dev-lead").rglob("workspace.yaml")):
+        document = _load_yaml(workspace)
+        errors.extend(channel_errors(workspace.relative_to(root), document))
+        if not isinstance(document, dict):
+            continue
+        name = document.get("name")
+        if isinstance(name, str):
+            names.add(name)
+        declared = document.get("files_dir")
+        if not isinstance(declared, str):
+            errors.append(f"{workspace.relative_to(root)}: [missing-files-dir]")
+            continue
+        files_dir = (root / declared).resolve()
+        files_dirs.append(files_dir)
+        prompt = files_dir / "system-prompt.md"
+        if not prompt.is_file():
+            errors.append(
+                f"{workspace.relative_to(root)}: [missing-system-prompt] {prompt}"
+            )
+        elif IMPORT_RULES_MARKER not in prompt.read_text(encoding="utf-8"):
+            errors.append(
+                f"{prompt.relative_to(root)}: [missing-import-local-rules] critical "
+                "safety rules are not delivered inside this files_dir"
+            )
+    return names, files_dirs, errors
+
+
+def _nearest_files_dir(path: Path, files_dirs: list[Path]) -> Path | None:
+    candidates = [directory for directory in files_dirs if path.is_relative_to(directory)]
+    return max(candidates, key=lambda item: len(item.parts), default=None)
+
+
+def _require(text: str, relative: str, needles: list[str], errors: list[str]) -> None:
     for needle in needles:
         if needle not in text:
-            ERRORS.append(f"{relative}: required current contract missing: {needle!r}")
+            errors.append(f"{relative}: [missing-current-contract] {needle!r}")
 
 
-def _check_branch_policy() -> None:
-    retired_branch_patterns = (
-        re.compile(r"--base\s+staging\b", re.IGNORECASE),
-        re.compile(r"\borigin\s+staging\b", re.IGNORECASE),
-        re.compile(r"\bbranch(?:es)?\s+(?:from|off)\s+`?staging`?", re.IGNORECASE),
-        re.compile(r"\bPRs?\s+(?:target|targeting|merge to)\s+`?staging`?", re.IGNORECASE),
-        re.compile(r"\bstaging(?:-to-|\s*(?:→|->)\s*)main\b", re.IGNORECASE),
-        re.compile(r"\bmerge\s+staging\s+into\s+main\b", re.IGNORECASE),
-        re.compile(r"/commits/staging/status"),
+def _forbid(text: str, relative: str, needles: list[str], errors: list[str]) -> None:
+    for needle in needles:
+        if needle in text:
+            errors.append(f"{relative}: [retired-instruction] {needle!r}")
+
+
+def validate_repository(root: Path = DEFAULT_ROOT) -> list[str]:
+    """Return every repository-level current-operations contract violation."""
+
+    root = root.resolve()
+    errors: list[str] = []
+    names, files_dirs, workspace_errors = _workspace_contract(root)
+    errors.extend(workspace_errors)
+
+    manifest = _load_yaml(root / "dev-department.yaml")
+    if isinstance(manifest, dict):
+        defaults = manifest.get("defaults", {})
+        routing = defaults.get("category_routing") if isinstance(defaults, dict) else None
+        errors.extend(routing_errors(routing, names))
+
+    active_paths = [root / "README.md", root / "SECRETS_MATRIX.md", root / "SHARED_RULES.md"]
+    active_paths.extend(
+        path
+        for path in (root / "dev-lead").rglob("*")
+        if path.is_file()
+        and path.suffix.lower() in {".md", ".yaml", ".yml"}
     )
-    for path in ROOT.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in {".md", ".yaml", ".yml"}:
-            continue
-        if ".git" in path.parts or path.name == "handoff-notes.md":
-            continue
-        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            if any(pattern.search(line) for pattern in retired_branch_patterns):
-                ERRORS.append(
-                    f"{path.relative_to(ROOT)}:{lineno}: "
-                    f"retired staging-branch instruction: {line.strip()}"
+    active_paths.append(root / ".molecule-ci" / "scripts" / "local-e2e-setup.sh")
+    for path in sorted(set(active_paths)):
+        text = path.read_text(encoding="utf-8")
+        errors.extend(instruction_errors(path.relative_to(root), text))
+        if path.suffix.lower() == ".md":
+            errors.extend(
+                markdown_link_errors(root, path, _nearest_files_dir(path, files_dirs))
+            )
+
+    for initial in sorted((root / "dev-lead").rglob("initial-prompt.md")):
+        text = initial.read_text(encoding="utf-8")
+        if "git clone" in text or "gitea_git clone" in text:
+            errors.extend(git_helper_errors(initial.relative_to(root), text))
+            if "remote set-url origin" not in text:
+                errors.append(
+                    f"{initial.relative_to(root)}: [missing-clean-remote-ratchet]"
                 )
+        if "gitea_api() (" in text:
+            _require(
+                text,
+                initial.relative_to(root).as_posix(),
+                ['endpoint="$1"', "shift", '"$@"'],
+                errors,
+            )
 
+    local_setup = (root / ".molecule-ci" / "scripts" / "local-e2e-setup.sh").read_text()
+    _require(
+        local_setup,
+        ".molecule-ci/scripts/local-e2e-setup.sh",
+        ["credential.helper=!", "remote set-url origin", "gitea_git() ("],
+        errors,
+    )
+    errors.extend(
+        git_helper_errors(
+            Path(".molecule-ci/scripts/local-e2e-setup.sh"), local_setup
+        )
+    )
 
-def _check_retired_monorepo_name() -> None:
-    for path in ROOT.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in {".md", ".yaml", ".yml"}:
-            continue
-        if ".git" in path.parts or path.name == "handoff-notes.md":
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    _forbid(
+        readme,
+        "README.md",
+        ["via filesystem symlink at deploy time", "Operator-side deploy layout", ".github/workflows/", "scaffolded empty", "Phase 3c-2", "python .molecule-ci/"],
+        errors,
+    )
+    _require(readme, "README.md", ["!external", ".gitea/workflows/validate.yml", "python3 .molecule-ci/"], errors)
+
+    shared = (root / "SHARED_RULES.md").read_text(encoding="utf-8")
+    _forbid(shared, "SHARED_RULES.md", ["GH_TOKEN", "GitHub App installation token", "Production AWS/Fly/Vercel keys", "molecule-monorepo/.github/workflows"], errors)
+    _require(shared, "SHARED_RULES.md", ["https://git.moleculesai.app", "https://key.moleculesai.app", "registry.moleculesai.app", "PR targeting `main`"], errors)
+
+    for path in active_paths:
+        if not path.is_file():
             continue
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            if "molecule-monorepo" not in line:
-                continue
-            historical = (
+            if re.search(r"--base\s+staging\b|\borigin\s+staging\b|/commits/staging/status", line, re.I):
+                errors.append(
+                    f"{path.relative_to(root)}:{lineno}: [retired-staging-branch] {line.strip()}"
+                )
+            if "molecule-monorepo" in line and not (
                 "renamed from molecule-monorepo" in line
                 or "then named `molecule-monorepo`" in line
-            )
-            changelog = path.name == "SKILL.md" and line.lstrip().startswith("- `1.0.0`")
-            if not historical and not changelog:
-                ERRORS.append(
-                    f"{path.relative_to(ROOT)}:{lineno}: active retired repo name: {line.strip()}"
+                or (path.name == "SKILL.md" and line.lstrip().startswith("- `1.0.0`"))
+            ):
+                errors.append(
+                    f"{path.relative_to(root)}:{lineno}: [retired-repo-name] {line.strip()}"
                 )
 
-
-def _check_channels() -> None:
-    allowed_keys = {"type", "config", "allowed_users", "enabled"}
-    for path in ROOT.rglob("workspace.yaml"):
-        doc = yaml.load(path.read_text(encoding="utf-8"), Loader=TemplateLoader)
-        if not isinstance(doc, dict):
-            continue
-        channels = doc.get("channels", [])
-        if not isinstance(channels, list):
-            ERRORS.append(f"{path.relative_to(ROOT)}: channels must be a list")
-            continue
-        for index, channel in enumerate(channels):
-            label = f"{path.relative_to(ROOT)}: channels[{index}]"
-            if not isinstance(channel, dict):
-                ERRORS.append(f"{label} must be a mapping")
-                continue
-            unknown = sorted(set(channel) - allowed_keys)
-            if unknown:
-                ERRORS.append(f"{label} has importer-ignored keys: {unknown}")
-            if not isinstance(channel.get("config"), dict):
-                ERRORS.append(f"{label} must provide a config mapping")
+    return sorted(set(errors))
 
 
 def main() -> int:
-    _forbid(
-        "README.md",
-        [
-            "via filesystem symlink at deploy time",
-            "Operator-side deploy layout",
-            ".github/workflows/",
-            "scaffolded empty",
-            "Phase 3c-2",
-            "python .molecule-ci/",
-        ],
-    )
-    _require(
-        "README.md",
-        ["!external", ".gitea/workflows/validate.yml", "python3 .molecule-ci/"],
-    )
-
-    _forbid("dev-department.yaml", ["gitops-style symlink", "Phase 3c-"])
-    _require("dev-department.yaml", ["!external"])
-
-    _forbid(
-        "SECRETS_MATRIX.md",
-        [
-            "GH_TOKEN",
-            "operator SSOT",
-            "Per-agent GitHub Apps",
-            "AWS_ACCESS_KEY_ID",
-            "FLY_API_TOKEN",
-            "VERCEL_TOKEN",
-        ],
-    )
-    _require("SECRETS_MATRIX.md", ["Infisical", "GITEA_TOKEN"])
-
-    _forbid("dev-lead/.env.example", ["GH_TOKEN", "unified credentials file"])
-    _require("dev-lead/.env.example", ["Infisical", "GITEA_TOKEN"])
-
-    deployment_files = [
-        "dev-lead/system-prompt.md",
-        "dev-lead/infra-lead/system-prompt.md",
-        "dev-lead/infra-lead/infra-sre/system-prompt.md",
-        "dev-lead/infra-lead/infra-sre/workspace.yaml",
-        "dev-lead/app-lead/system-prompt.md",
-        "dev-lead/app-lead/app-fe/system-prompt.md",
-        "dev-lead/app-lead/app-fe/workspace.yaml",
-        "dev-lead/integration-tester/system-prompt.md",
-        "dev-lead/cp-lead/cp-be/system-prompt.md",
-        "dev-lead/triage-operator/system-prompt.md",
-        "dev-lead/triage-operator/philosophy.md",
-        "dev-lead/triage-operator/SKILL.md",
-    ]
-    for relative in deployment_files:
-        _forbid(
-            relative,
-            ["Railway", "Vercel", "EC2", "3.131.96.216", "fly status", "fly logs"],
-        )
-
-    retired_layouts = {
-        "dev-lead/system-prompt.md": ["`platform/`", "`workspace-template/`"],
-        "dev-lead/fullstack-engineer/system-prompt.md": ["`platform/`"],
-        "dev-lead/fullstack-engineer/schedules/pick-up-work.md": ["platform/ (Go)"],
-        "dev-lead/core-lead/core-security/schedules/security-scan.md": [
-            "platform/internal/handlers/"
-        ],
-        "dev-lead/core-lead/core-devops/system-prompt.md": [".github/workflows/"],
-        "dev-lead/schedules/hourly-template-fitness-audit.md": [
-            "org-templates/molecule-dev",
-            "host.docker.internal",
-            "python .molecule-ci/",
-        ],
-        "dev-lead/triage-operator/initial-prompt.md": ["org-templates/molecule-dev"],
-        "dev-lead/triage-operator/workspace.yaml": ["org-templates/molecule-dev"],
-        "dev-lead/triage-operator/schedules/hourly-triage.md": [
-            "org-templates/molecule-dev"
-        ],
-        "dev-lead/app-lead/documentation-specialist/initial-prompt.md": [
-            "platform/internal/handlers/"
-        ],
-        "dev-lead/app-lead/documentation-specialist/schedules/daily-docs-sync.md": [
-            "platform/internal/handlers/",
-            "/workspace/repo/org-templates/",
-            "/workspace/repo/plugins/",
-        ],
-        "dev-lead/app-lead/documentation-specialist/schedules/cross-repo-docs-watch-every-2h.md": [
-            "platform/internal/handlers/",
-            "workspace-configs-templates",
-            ".github/workflows/",
-        ],
-        "dev-lead/app-lead/documentation-specialist/schedules/daily-changelog.md": [
-            "content/docs/changelog.mdx",
-            "--limit 60",
-        ],
-        "dev-lead/app-lead/documentation-specialist/system-prompt.md": [
-            "40+ repos",
-            "47 repos",
-            "48 repos",
-            ".github/profile/README.md",
-        ],
-    }
-    for relative, needles in retired_layouts.items():
-        _forbid(relative, needles)
-
-    _require(
-        "dev-lead/app-lead/documentation-specialist/initial-prompt.md",
-        ["molecule-ai/molecule-core", "workspace-server/internal/handlers/"],
-    )
-    _require(
-        "dev-lead/app-lead/documentation-specialist/schedules/daily-changelog.md",
-        ["content/docs/changelog/YYYY-MM.mdx", "manual production publish"],
-    )
-    _require(
-        "dev-lead/schedules/hourly-template-fitness-audit.md",
-        [
-            "molecule-ai/molecule-dev-department",
-            "python3 .molecule-ci/scripts/validate-current-ops.py",
-        ],
-    )
-
-    _forbid(
-        "SHARED_RULES.md",
-        [
-            "GH_TOKEN",
-            "GitHub App installation token",
-            "Production AWS/Fly/Vercel keys",
-            "molecule-monorepo/.github/workflows",
-        ],
-    )
-    _require(
-        "SHARED_RULES.md",
-        [
-            "https://git.moleculesai.app",
-            "https://key.moleculesai.app",
-            "registry.moleculesai.app",
-            "PR targeting `main`",
-        ],
-    )
-
-    _check_branch_policy()
-    _check_retired_monorepo_name()
-    _check_channels()
-
-    if ERRORS:
-        for error in ERRORS:
+    errors = validate_repository()
+    if errors:
+        for error in errors:
             print(f"::error::{error}")
         return 1
     print("OK: current operations contract is internally consistent")

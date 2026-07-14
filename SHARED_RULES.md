@@ -10,8 +10,9 @@ The four **Philosophy** sections below frame how we approach all work. Every spe
 
 The former GitHub `Molecule-AI` organization was suspended on 2026-05-06.
 Canonical source control and Actions are now Gitea at
-`https://git.moleculesai.app/molecule-ai/`. Use `tea` or the Gitea REST API;
-never route repository work through GitHub.
+`https://git.moleculesai.app/molecule-ai/`. The runtime guarantees `curl`, Git,
+and Python 3, but no SCM or JSON CLI; use the Gitea REST API plus Python's
+standard library and never route repository work through GitHub.
 
 The current access map is domain-only:
 
@@ -26,6 +27,11 @@ There is no operator host or SSH-based deploy path. `GITEA_TOKEN` is injected
 as the current workspace persona's scoped credential. Do not borrow a founder
 or administrator token, embed a token in a clone URL, or persist credentials in
 the repository remote.
+
+For authenticated REST calls, define the import-local `gitea_api` wrapper from
+your system prompt. It sends the token through curl config on stdin, not in the
+process argument list. For Git, use the ephemeral `gitea_git` credential helper
+from your initial prompt and keep every saved remote credential-free.
 
 Merges to `main` trigger deployment only in repositories that have a checked-in
 publisher workflow. Verify the workflow and its terminal result for the target
@@ -84,12 +90,19 @@ The `Molecule-AI/internal` repo is the team's durable memory: `PLAN.md` (roadmap
 Before any non-trivial decision (filing an issue, starting a refactor, claiming a phase exists, escalating a "novel" problem, beginning a new plan), search the team's memory:
 
 ```
-# Code search: tea has no direct equivalent for `gh search code` — clone + grep is the durable replacement
-test -d /tmp/internal || tea repo clone molecule-ai/internal /tmp/internal
+# Clone + grep is the durable code-search replacement. `gitea_git` is the
+# ephemeral helper from the role's initial prompt.
+INTERNAL_URL=https://git.moleculesai.app/molecule-ai/internal.git
+if [ -d /tmp/internal/.git ]; then
+  git -C /tmp/internal remote set-url origin "$INTERNAL_URL"
+  gitea_git -C /tmp/internal pull --ff-only
+else
+  gitea_git clone "$INTERNAL_URL" /tmp/internal
+fi
 grep -rE "<keywords>" /tmp/internal --include="*.md"
 
 # Or list contents of an area directly via Gitea API
-curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/molecule-ai/internal/contents/<area>/ --jq '.[].name'
+gitea_api 'repos/molecule-ai/internal/contents/<area>/?ref=main' | python3 -m json.tool
 ```
 
 If the topic is in `internal/`, read it — your past selves and peer agents have already worked on it. If it isn't, your work belongs there *afterwards*.
@@ -103,7 +116,7 @@ The team's recent telemetry showed only 9 internal-doc references across 7,076 a
 1. **Never fabricate infrastructure details.** If you don't have direct access to verify something (server names, runner configs, SSH access, cache states), say "I cannot verify" — do NOT invent plausible-sounding details.
 
 2. **Distinguish observation from inference.**
-   - Observation: "tea returns 401 on all API calls"
+   - Observation: "the Gitea REST request returns HTTP 401"
    - Inference (BAD): "CI runner hongming-claws has Go module cache corruption"
    - Say what you tried, what error you got, and stop there.
 
@@ -129,7 +142,7 @@ The fix is simple: report exactly what you observed, say "I don't know" for ever
 
 Never push directly to `main`. Every change follows this workflow:
 
-1. Update a clean local base with `git switch main && git pull --ff-only`.
+1. Update a clean local base with `git switch main && gitea_git pull --ff-only`.
 2. Create a feature, fix, chore, or documentation branch from current `main`.
 3. Push the branch and open a PR targeting `main`.
 4. Satisfy the repository's required CI, review, and human-only SOP gates.
@@ -182,19 +195,27 @@ then named `molecule-monorepo`, now `molecule-core`. The following paths in
 ### How to write to the internal repo (copy-paste this)
 
 ```bash
-# One-time clone (idempotent)
+# Idempotent clone/update using the role's ephemeral `gitea_git` helper
 mkdir -p ~/repos
-test -d ~/repos/internal || tea repo clone molecule-ai/internal ~/repos/internal
+INTERNAL_URL=https://git.moleculesai.app/molecule-ai/internal.git
+if [ -d ~/repos/internal/.git ]; then
+  git -C ~/repos/internal remote set-url origin "$INTERNAL_URL"
+  gitea_git -C ~/repos/internal pull --ff-only
+else
+  gitea_git clone "$INTERNAL_URL" ~/repos/internal
+fi
 
 cd ~/repos/internal
-git pull origin main
+gitea_git pull --ff-only origin main
 git checkout -b <my-role>/<topic>-<date>     # e.g. pmm/phase34-positioning-2026-05-01
 mkdir -p <area>                               # research, marketing, runbooks, etc.
 $EDITOR <area>/<slug>.md                      # write your content
 git add <area>/<slug>.md
 git commit -m "<area>: add <slug>"
-git push -u origin HEAD
-tea pr create --base main --fill
+gitea_git push -u origin HEAD
+BRANCH=$(git branch --show-current)
+PAYLOAD=$(BRANCH="$BRANCH" python3 -c 'import json,os; print(json.dumps({"base":"main","head":os.environ["BRANCH"],"title":"<title>","body":"<body>"}))')
+gitea_api 'repos/molecule-ai/internal/pulls' -X POST -H 'Content-Type: application/json' --data "$PAYLOAD"
 ```
 
 The friction here is intentional. Public space and internal space are
@@ -265,7 +286,7 @@ Before posting "Phase X ships date Y" or "needs decision on Z":
 
 ## Token Expiry Is Not a P0
 
-If you see `tea: HTTP 401`, `git: authentication failed`, or a Gitea API 401:
+If you see a Gitea API 401 or `git: authentication failed`:
 
 1. Record the exact error and operation; do not guess whether the cause is
    expiry, scope, injection, or service availability.
@@ -301,13 +322,13 @@ Tags are now ALSO mechanically required for PR approval gates. The PR Merge Appr
 
 **PM does NOT merge.** PM does top-level decisions, CEO comms (Telegram, max 2-3/day), task distribution, and big-picture monitoring. If a merge decision needs PM input, the Lead asks via `delegate_task` — PM responds with a directional decision, the Lead executes the merge.
 
-If you're an engineer and find yourself wanting to run `tea pr merge`, stop and ask your Lead.
+If you're an engineer and find yourself preparing a pull-request merge request, stop and ask your Lead.
 
 ## PR Merge Approval Gate
 
-Before a Lead runs `tea pr merge`, **all four** of these must be on the PR:
+Before a Lead calls `POST /repos/{owner}/{repo}/pulls/{index}/merge`, **all four** of these must be on the PR:
 
-1. **All required CI checks green** — `tea pr checks <N>` shows every gating check passing. For molecule-ai/internal + molecule-ai/molecule-core, the gating check `sop-tier-check / tier-check (pull_request)` enforces the §SOP-6 tier→team approval contract; see `internal/runbooks/dev-sop.md`.
+1. **All required CI checks green** — query the PR's `head.sha`, then `GET /repos/{owner}/{repo}/commits/{sha}/status` and verify every gating context. For molecule-ai/internal + molecule-ai/molecule-core, `sop-tier-check / tier-check (pull_request)` enforces the §SOP-6 tier→team approval contract; see `internal/runbooks/dev-sop.md`.
 2. **`[<team>-qa-agent] APPROVED`** — QA Engineer ran tests + verified per-changed-file coverage ≥ 100% (or `[<team>-qa-agent] N/A — docs/lint only` waiver). Tag MUST include the team prefix (e.g. `[core-qa-agent]`, `[cp-qa-agent]`, `[app-qa-agent]`) — bare `[qa-agent]` is rejected at lint.
 3. **`[<team>-security-agent] APPROVED`** — Security Auditor reviewed for CWE classes; OWASP-checklist clean. Required on every PR touching `auth/`, `middleware/`, DB/handler code, or any plugin install path. Use `N/A — non-security-touching` for the rest.
 4. **`[<team>-uiux-agent] APPROVED`** — UIUX Designer reviewed any canvas/UI changes. `N/A — backend-only` for non-UI PRs.
@@ -341,7 +362,7 @@ Every PR opened in `internal` or `molecule-core` MUST follow `.gitea/pull_reques
 Your workspace only has the secrets your role needs. See [SECRETS_MATRIX.md](./SECRETS_MATRIX.md) for the full table.
 
 Examples:
-- Engineers have `GITEA_TOKEN` scoped to PR-author — `tea pr create` works, `tea pr merge` does not
+- Engineers have `GITEA_TOKEN` scoped to PR-author operations; merge writes remain lead-only
 - Marketing Lead has LinkedIn + X API keys; other marketing roles draft via PRs
 - PM has the `TELEGRAM_BOT_TOKEN` for CEO comms; nobody else does
 - Operational roles receive only exact task-specific values bound from Infisical
@@ -368,7 +389,7 @@ Never escalate up two levels. Never sideways-escalate (Lead → Lead). Never inv
 When you wake up (cron tick or A2A delegation), check for queued work in priority order:
 
 1. **Direct A2A delegation** — finish first
-2. **Your label-scoped issue queue:** `tea issue list --repo molecule-ai/molecule-core --state open --label "area:<your-role>" --label "needs-work"`
+2. **Your label-scoped issue queue:** `gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&labels=area:<your-role>,needs-work&limit=50' | python3 -m json.tool`
 3. **Generic backlog claim** — issues labeled `needs-work` with no `area:*` label that match your skill set
 4. **Idle prompt** — only if 1+2+3 all returned nothing
 
@@ -454,9 +475,7 @@ Your idle-prompt cron should include a step:
 
 ```bash
 # Check internal PRs from your workers
-tea pr list --repo molecule-ai/internal --state open \
-  --json number,title,author,createdAt \
-  --jq '.[] | select(.author.login != "app/molecule-ai" or .title | test("<my-worker-role>")) | "#\(.number) \(.title)"'
+gitea_api 'repos/molecule-ai/internal/pulls?state=open&limit=50' | python3 -m json.tool
 ```
 
 If a worker has filed an internal PR and you haven't reviewed it yet,

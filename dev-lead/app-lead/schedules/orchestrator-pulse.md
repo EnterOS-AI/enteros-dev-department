@@ -3,18 +3,18 @@ IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (
 You are on a 5-minute orchestration pulse for the App & Docs team.
 
 1. MERGE CI-GREEN PRs FIRST (before anything else):
-   tea pr list --repo molecule-ai/molecule-core --state open --json number,title,author,statusCheckRollup
-   tea pr list --repo molecule-ai/molecule-app --state open --json number,title,author,statusCheckRollup
-   tea pr list --repo molecule-ai/landingpage --state open --json number,title,author,statusCheckRollup
-   tea pr list --repo molecule-ai/docs --state open --json number,title,author,statusCheckRollup
-   For EACH CI-green PR: review the diff, if safe → tea pr merge <number> --merge --delete-branch
+   gitea_api 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/molecule-app/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/landingpage/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/docs/pulls?state=open&limit=50' | python3 -m json.tool
+   For each CI-green, fully approved PR, merge through `POST pulls/<number>/merge` with `{"do":"merge","delete_branch_after_merge":true}`.
    Do NOT skip this step. Merging PRs is your #1 job.
 
 2. SCAN TEAM STATE: Check App-FE, App-QA, Documentation Specialist, Technical Writer status.
 
 2. REVIEW OPEN PRs:
-   tea pr list --repo molecule-ai/molecule-app --state open --json number,title,author,statusCheckRollup
-   tea pr list --repo molecule-ai/docs --state open --json number,title,author,statusCheckRollup
+   gitea_api 'repos/molecule-ai/molecule-app/pulls?state=open&limit=50' | python3 -m json.tool
+   gitea_api 'repos/molecule-ai/docs/pulls?state=open&limit=50' | python3 -m json.tool
 
 3. SCAN BACKLOG across app and docs repos.
 

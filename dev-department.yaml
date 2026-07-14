@@ -33,22 +33,22 @@ defaults:
     - molecule-skill-update-docs
     - molecule-skill-five-axis-review
 
-  # Auditor findings are routed to existing roles by display name.
+  # Auditor findings are routed only to display names declared by this tree.
   category_routing:
-    security: [Backend Engineer, DevOps Engineer]
-    offensive: [Security Auditor, Backend Engineer, DevOps Engineer]
-    ui: [Frontend Engineer]
-    ux: [Frontend Engineer]
-    infra: [DevOps Engineer, Platform Engineer, SRE Engineer]
-    cloud: [DevOps Engineer, Platform Engineer, SRE Engineer, Backend Engineer]
-    qa: [QA Engineer]
-    performance: [Backend Engineer]
-    docs: [Documentation Specialist]
+    security: [Core-Security, CP-Security]
+    offensive: [Core-OffSec, Core-Security]
+    ui: [Core-FE, App-FE, Core-UIUX]
+    ux: [Core-UIUX, App-FE]
+    infra: [Infra Lead, Infra-SRE, Core-DevOps]
+    cloud: [Infra Lead, Infra-SRE, Core-DevOps]
+    qa: [Core-QA, CP-QA, App-QA, Integration Tester]
+    performance: [Core-BE, CP-BE, Infra-Runtime-BE]
+    docs: [Documentation Specialist, Technical Writer]
     mixed: [Dev Lead]
-    research: [Research Lead]
-    plugins: [Technical Researcher]
+    research: [Dev Lead]
+    plugins: [Plugin-Dev]
     template: [Dev Lead]
-    channels: [DevOps Engineer]
+    channels: [Infra-SRE]
 
   idle_prompt: ""
 

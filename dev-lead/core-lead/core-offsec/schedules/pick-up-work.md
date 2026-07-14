@@ -6,11 +6,11 @@ Work cycle. Be productive every tick.
    Pull latest on your assigned repos.
 
 2. CHECK ASSIGNMENTS:
-   tea issue list --repo molecule-ai/molecule-core --assignee @me --state open --json number,title,labels
+   gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
    Check for tasks from your team lead via search_memory("delegated-task").
 
 3. PICK UP WORK (if no active assignment):
-   tea issue list --repo molecule-ai/molecule-core --state open --json number,title,labels,assignees --jq '.[] | select(.assignees | length == 0)' | head -20
+   gitea_api 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
    Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.
    Self-assign it, create a branch from current main, implement the fix, run tests, and open a PR targeting main (--merge flag only). Code > triage — do NOT just file more issues.
 

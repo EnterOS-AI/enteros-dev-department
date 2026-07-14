@@ -15,11 +15,13 @@ files_dir: dev-lead
 plugins: [molecule-skill-code-review, molecule-skill-llm-judge, molecule-hitl, molecule-freeze-scope]
 canvas: {x: 650, y: 250}
 channels:
+  # Disabled until molecule-core#4340 supports env-expanded allowed_users and
+  # rejects missing allowlists. Enabling this shape would be fail-open.
   - type: telegram
     config:
       bot_token: ${TELEGRAM_BOT_TOKEN}
       chat_id: ${TELEGRAM_CHAT_ID}
-    enabled: true
+    enabled: false
 idle_interval_seconds: 900
 schedules:
   - name: Orchestrator pulse

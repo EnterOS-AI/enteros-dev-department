@@ -37,7 +37,7 @@ set -euo pipefail
 
 ROOT="${LOCAL_E2E_ROOT:-/tmp/local-e2e-deploy}"
 GITEA="${GITEA_URL:-https://git.moleculesai.app}"
-TOKEN_PATH="${HOME}/.molecule-ai/gitea-token"
+TOKEN_PATH="${GITEA_TOKEN_FILE:-}"
 
 PARENT_REPO="molecule-ai-org-template-molecule-dev"
 PARENT_DIR_NAME="molecule-dev"
@@ -66,21 +66,48 @@ fi
 mkdir -p "${ROOT}"
 cd "${ROOT}"
 
-if [[ ! -f "${TOKEN_PATH}" ]]; then
-  echo "ERROR: gitea token not at ${TOKEN_PATH}" >&2
-  exit 2
+if [[ -z "${GITEA_TOKEN:-}" ]]; then
+  if [[ -z "${TOKEN_PATH}" || ! -f "${TOKEN_PATH}" ]]; then
+    echo "ERROR: export GITEA_TOKEN or set GITEA_TOKEN_FILE explicitly" >&2
+    exit 2
+  fi
+  GITEA_TOKEN=""
+  IFS= read -r GITEA_TOKEN < "${TOKEN_PATH}"
 fi
-TOKEN="$(cat "${TOKEN_PATH}")"
+export GITEA_TOKEN
+
+# The token remains in the environment and credential protocol only. The
+# helper's command-line argument contains the variable name, never its value.
+gitea_git() (
+  set +x
+  git -c credential.helper= \
+    -c 'credential.helper=!f() {
+      test "$1" = get || exit 0
+      protocol=
+      host=
+      while IFS="=" read -r key value; do
+        case "$key" in
+          protocol) protocol="$value" ;;
+          host) host="$value" ;;
+        esac
+      done
+      test "$protocol" = https && test "$host" = git.moleculesai.app || exit 0
+      printf "%s\n" "username=oauth2" "password=$GITEA_TOKEN"
+    }; f' "$@"
+)
 
 clone_or_pull() {
   local repo="$1" dir="$2"
-  local url="https://oauth2:${TOKEN}@${GITEA#https://}/molecule-ai/${repo}.git"
+  local url="${GITEA%/}/molecule-ai/${repo}.git"
   if [[ -d "${dir}/.git" ]]; then
     echo "[pull] ${dir}"
-    git -C "${dir}" pull --ff-only --quiet
+    # Ratchet any clone made by the older script back to a clean remote before
+    # an authenticated operation can read or reuse it.
+    git -C "${dir}" remote set-url origin "${url}"
+    gitea_git -C "${dir}" pull --ff-only --quiet
   else
     echo "[clone] ${repo} → ${dir}"
-    git clone --quiet "${url}" "${dir}"
+    gitea_git clone --quiet "${url}" "${dir}"
   fi
 }
 
@@ -99,6 +126,8 @@ if [[ "$WITH_SYMLINK" == "1" ]]; then
     exit 4
   fi
 fi
+
+unset GITEA_TOKEN
 
 echo ""
 echo "== ready =="
