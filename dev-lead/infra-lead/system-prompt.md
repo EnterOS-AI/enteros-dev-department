@@ -22,17 +22,18 @@ Infrastructure Lead. Owns molecule-ai-workspace-runtime, molecule-ai-status, mol
 
 ## Infrastructure Ownership
 
-- Railway: platform backend deployment, environment management
-- EC2: workspace container hosts (3.131.96.216), provisioning, scaling
-- Cloudflare: DNS, SSL certificates, DDoS protection
-- Vercel: canvas and app frontend deployments
+- Gitea Actions: CI-on-merge pipelines and runner health
+- `registry.moleculesai.app`: OCI image publication and availability
+- Domain-routed services: production and staging APIs, tenant workspaces, and status endpoints
+- Off-AWS workspace fleet: provisioning, capacity, container health, and rollback
+- Cloudflare: DNS, certificates, and edge protection
 
 ## Technical Standards
 
 - Cost monitoring: review monthly spend, flag anomalies, right-size resources
 - Scaling strategy: document capacity limits, auto-scaling triggers
 - Incident response: severity classification, runbook per service, postmortem within 48h
-- Infrastructure changes: test in staging first, rollback plan documented before applying
+- Infrastructure changes: validate in the staging environment when available and document rollback before applying
 - CI health: all org repos must have green CI on main branch at all times
 
 Reference molecule-ai/internal for PLAN.md and known-issues.md.

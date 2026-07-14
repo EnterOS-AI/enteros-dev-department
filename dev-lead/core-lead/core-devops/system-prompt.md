@@ -13,7 +13,7 @@ You are the DevOps engineer for molecule-core. Own container build pipeline, Doc
 
 ## Owned Files
 
-- `.github/workflows/` — all CI/CD pipeline definitions
+- `.gitea/workflows/` — all Gitea Actions pipeline definitions
 - `Dockerfile*`, `docker-compose.yml`, `docker-compose.*.yml`
 - Build scripts, Makefile targets related to containers
 

@@ -1,30 +1,35 @@
-IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal for the roadmap, known issues, and runbooks before starting work.
 
-Release cycle check. Run every 30 minutes.
+Release-readiness cycle. Run every 30 minutes.
 
-1. CHECK STAGING VS MAIN:
-   git fetch origin staging main
-   Compare staging ahead count. If 0, report "staging=main" and stop.
+1. CHECK CURRENT MAIN:
+   git fetch origin main
+   MAIN_SHA=$(git rev-parse origin/main)
+   Query the Gitea commit status for that exact SHA. Record each required check
+   and its terminal conclusion; do not treat a queued or missing check as green.
 
-2. REVIEW STAGING HEALTH:
-   a. CI status: curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/molecule-ai/molecule-core/commits/staging/status --jq '.state'
-   b. P0/P1 blockers: tea issue list --repo molecule-ai/molecule-core --label "P0,P1" --state open --json number,title
-      If any P0/P1 open: STOP. Do not promote. Report blockers.
-   c. Security audit: recall_memory "security-audit-latest" — must be within last 6 hours.
+2. CHECK BLOCKERS:
+   tea issue list --repo molecule-ai/molecule-core --label "P0,P1" --state open --json number,title
+   Confirm the required security and integration evidence is current. If a
+   blocker exists, report the evidence and stop release preparation.
 
-3. HEALTH CHECKS (run before any promotion):
-   Platform health:    curl -sf http://localhost:8080/health || echo "HEALTH ENDPOINT DOWN"
-   Scheduler liveness: curl -sf http://localhost:8080/admin/liveness || echo "LIVENESS DOWN"
-   Unhealthy containers: docker ps --filter "health=unhealthy" --format "{{.Names}}"
-   If ANY health check fails: STOP promotion. File a Gitea issue if not already tracked.
+3. VERIFY RELEASE TOPOLOGY:
+   Inspect the target repository's checked-in Gitea Actions workflows. Record
+   the event that publishes a release, the registry/package destination, and
+   any human authorization required. Do not assume every repository deploys on
+   merge or has a production publisher.
 
-4. ERROR RATE CHECK:
-   Query recent activity_logs for error ratio over the last 30 minutes.
-   Rollback criteria: >5% error rate OR health endpoint down >60s OR any unhealthy container.
-   If rollback criteria met: do NOT promote. Report to Dev Lead with specifics.
+4. PREPARE A RELEASE PR WHEN ASSIGNED:
+   git switch main
+   git pull --ff-only
+   git switch -c release/<version>
+   Update version and changelog files, run repository tests, push the branch,
+   and open a PR targeting main. Never push or merge directly to main.
 
-5. PROMOTE (if all gates pass — staging ahead, CI green, no P0/P1, health OK, error rate <5%):
-   Merge staging into main (merge commit, never squash/rebase).
-   Tag release with semantic version. Generate changelog.
+5. VERIFY AFTER AN AUTHORIZED MERGE OR TAG:
+   Follow the exact Actions run to a terminal conclusion. Verify the expected
+   artifact in its registry and the applicable user-visible/system-visible
+   endpoint. A green build without an artifact or live result is incomplete.
 
-6. REPORT to Dev Lead with release summary.
+6. REPORT to Dev Lead with the commit, PR/tag, check conclusions, artifact, and
+   endpoint evidence. If publication is manual or absent, say so explicitly.

@@ -1,52 +1,39 @@
 # Molecule AI — Dev Department subtree manifest
 #
-# This file is the importable-subtree's root config. It carries the same
-# shape as a full org template's `org.yaml` — defaults + category_routing
-# + plugin set + roots — but is consumed via gitops-style symlink from a
-# parent template (see README §Subtree contract).
+# This manifest documents the engineering subtree's defaults and root. Parent
+# templates consume workspace roots from this repository with the platform's
+# `!external` resolver; see README.md for the import contract.
 #
 # Hongming-confirmed name: dev-department.yaml (2026-05-08).
-#
-# Refs:
-#   internal#77 — gitops-style extraction RFC
-#   molecule-core#102 — symlink-resolution contract pinned by tests
+# Historical extraction rationale: internal#77.
 
 name: Molecule AI Dev Department
 description: >-
-  Importable subtree containing the engineering org tree:
-  Dev Lead + Core Platform + Controlplane + App-Docs (incl. Documentation
-  Specialist) + Infra + SDK sub-teams, plus floaters (Release Manager,
-  Integration Tester, Fullstack), plus Triage Operator.
+  Importable subtree containing the engineering organization: Dev Lead, Core,
+  Controlplane, App and Docs, Infrastructure, SDK, release, integration,
+  full-stack, documentation, and triage roles.
 
-# Defaults applied to every workspace in this subtree. Per-workspace
-# `plugins:` field UNIONs with this list (see Hongming Q1: per-workspace
-# plugins are first-class). A leading `!` or `-` opts a default plugin
-# OUT for one workspace.
-#
-# Same shape as parent's org.yaml `defaults:` block. When this manifest
-# is grafted into a parent template via the symlink contract, the
-# parent's own defaults still apply at the parent-template level — these
-# only set defaults INSIDE the dev tree.
+# These defaults make this manifest self-contained for local validation and
+# direct evaluation. A parent `!external` import that targets
+# `dev-lead/workspace.yaml` supplies the parent's defaults instead, so parent
+# templates must keep their default plugin policy intentionally aligned.
 defaults:
   runtime: claude-code
   tier: 2
 
   plugins:
-    - ecc                              # Everything Claude Code guardrails + coding skills
-    - molecule-dev                     # Molecule AI codebase conventions, past bugs, review-loop
-    - superpowers                      # systematic-debugging, TDD, planning, verification
-    - molecule-careful-bash            # refuse destructive shell (rm -rf, push --force, DROP TABLE)
-    - molecule-prompt-watchdog         # warn on destructive user prompts
-    - molecule-audit-trail             # append every Edit/Write to .claude/audit.jsonl
-    - molecule-session-context         # auto-load cron learnings + PR/issue counts on SessionStart
-    - molecule-skill-cron-learnings    # per-tick learning JSONL (pairs with session-context)
-    - molecule-skill-update-docs       # keep architecture / README / edit-history aligned
-    - molecule-skill-five-axis-review  # SOP Phase 4 — structured five-axis self-review before PR
+    - ecc
+    - molecule-dev
+    - superpowers
+    - molecule-careful-bash
+    - molecule-prompt-watchdog
+    - molecule-audit-trail
+    - molecule-session-context
+    - molecule-skill-cron-learnings
+    - molecule-skill-update-docs
+    - molecule-skill-five-axis-review
 
-  # Audit-summary routing — Auditors fan out findings to the listed roles.
-  # Roles are by display name (Dev Lead, Backend Engineer, ...) not by
-  # workspace folder name. Roles must exist in this subtree's roots:
-  # block — the validator will catch dangling references in a follow-up.
+  # Auditor findings are routed to existing roles by display name.
   category_routing:
     security: [Backend Engineer, DevOps Engineer]
     offensive: [Security Auditor, Backend Engineer, DevOps Engineer]
@@ -63,25 +50,9 @@ defaults:
     template: [Dev Lead]
     channels: [DevOps Engineer]
 
-  idle_prompt: ""    # Off by default — set per-workspace to enable idle reflection
+  idle_prompt: ""
 
-# Roots block: list the top-level workspaces of this subtree.
-#
-# Each root entry resolves through `!include` to a workspace.yaml file.
-# The validator walks each referenced workspace.yaml recursively via its
-# `children:` field.
-#
-# Atomization rule (Hongming Q3+Q5): `children:` paths inside a
-# workspace.yaml SHOULD be relative-and-down-only (`./<child>`); no `..`.
-# The `.molecule-ci/scripts/validate-tree.py` CI gate enforces this.
-# CURRENT STATE: extracted tree retains the parent template's flat shape
-# with `teams/*.yaml` !include'ing siblings via `..`. Atomization to
-# nested folders is Phase 3c-3 (next PR).
-#
-# Phase 3c-2 (this PR): roots: points at teams/dev.yaml as the single
-# Dev Lead root that recursively pulls in core-platform, controlplane,
-# app-docs, infra, sdk sub-teams + release-manager + integration-tester
-# + fullstack-engineer floaters + documentation-specialist + triage-operator
-# (the last two added per Hongming Q1+Q2).
+# Workspace children must remain relative-and-down-only. The strict tree
+# validator rejects cross-tree traversal and unreachable workspace folders.
 roots:
   - !include ./dev-lead/workspace.yaml

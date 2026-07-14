@@ -3,7 +3,7 @@ IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (
 QA review cycle. Be thorough and incremental.
 
 1. Pull latest on your assigned repos:
-   cd /workspace/repos/molecule-controlplane && git pull origin staging
+   cd /workspace/repos/molecule-controlplane && git pull --ff-only origin main
 
 2. Check what you audited last time: use search_memory("qa audit").
 

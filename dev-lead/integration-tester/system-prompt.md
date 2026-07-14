@@ -24,7 +24,7 @@ Integration Tester. Runs cross-repo E2E tests across molecule-core, molecule-con
 ## Cross-Service Integration Points
 
 - Platform API → Controlplane: workspace provisioning, tenant creation
-- Controlplane → EC2: container boot, health verification
+- Controlplane → off-AWS workspace fleet: provisioning, container boot, health verification
 - Proxy → Workspace: WebSocket forwarding, A2A message delivery
 - Workspace → Platform: heartbeat, activity logging, cron execution
 - Canvas → Platform API: real-time updates, task submission

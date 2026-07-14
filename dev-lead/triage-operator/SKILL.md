@@ -23,7 +23,7 @@ schedules:
 Runs the full 5-step triage cycle from `playbook.md`:
 
 0. Activate `careful-mode` + replay last 20 lines of `cron-learnings.jsonl`
-1. List open PRs + issues in `molecule-ai/molecule-monorepo` and `molecule-ai/molecule-controlplane`
+1. List open PRs + issues in `molecule-ai/molecule-core` and `molecule-ai/molecule-controlplane`
 2. Run 7 gates per PR (CI, build, tests, security, design, line-review, Playwright-if-canvas) + `code-review` skill on every PR + `cross-vendor-review` on noteworthy ones. Merge if all gates pass; hold if any auth/billing/schema concern.
 3. Sync docs if anything was merged (`update-docs` skill; opens `docs/sync-YYYY-MM-DD-tick-N` PR)
 4. Pick up at most 2 issues that pass gates I-1..I-6 (no design calls, no auth scope, clear test path)
@@ -35,7 +35,7 @@ Expected wall-clock: 5–30 minutes per tick depending on backlog.
 
 ## Inputs
 
-- None required. Reads repo state from `gh` CLI, reads operator memory from filesystem.
+- None required. Reads repository state from Gitea with `tea` and reads role memory from the filesystem.
 - Optional: `--overnight-autonomous` flag when run as the default autonomous cron — tightens the "skip noteworthy PRs" behaviour (see `system-prompt.md`).
 
 ## Outputs
@@ -105,7 +105,7 @@ Auditor agents sometimes file issues based on probes against old platform binari
 
 ### 4. The missing-migration pattern
 
-If an `/admin/*` or `/tenant-something/*` endpoint throws `relation "X" does not exist`, the migration didn't run. On monorepo platform, migrations auto-run on startup from `platform/migrations/`. On controlplane, migrations auto-run from embedded `migrations/` (since PR #36). If neither ran, check `fly logs | grep 'migrations: applied'` to distinguish "runner didn't fire" from "DB already had the table."
+If an `/admin/*` or `/tenant-something/*` endpoint throws `relation "X" does not exist`, verify the checked-in migration path and the current service's domain-routed logs before diagnosing. Do not infer a provider or host from an old command; quote the startup/migration evidence from the active deployment.
 
 ### 5. The fail-open-cascade pattern
 

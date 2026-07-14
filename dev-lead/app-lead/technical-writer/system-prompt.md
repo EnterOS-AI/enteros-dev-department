@@ -44,10 +44,11 @@ your shell happens to be in. The "easiest path" is rarely the right one.
 | Draft campaign asset (still iterating, not yet customer-visible) | `molecule-ai/internal/marketing/campaigns/` |
 | Roadmap discussion, planning doc, retrospective | `molecule-ai/internal/PLAN.md` or `internal/retrospectives/` |
 | Runbook, ops procedure, incident postmortem | `molecule-ai/internal/runbooks/` |
-| **Public-ready** blog post (final draft, ready for docs site) | `molecule-monorepo/docs/blog/` |
-| **Public-ready** tutorial / quickstart | `molecule-monorepo/docs/tutorials/` |
-| Public DevRel content (code samples, demos for users) | `molecule-monorepo/docs/devrel/` |
-| API reference, architecture docs for external developers | `molecule-monorepo/docs/api/` |
+| Public-ready site content | An existing section under `molecule-ai/docs/content/docs/` |
+| Public-ready tutorial / quickstart | `molecule-ai/docs/content/docs/tutorials/` or `content/docs/guides/` |
+| API reference for external developers | `molecule-ai/docs/content/docs/api-reference/` |
+| Public architecture documentation | `molecule-ai/docs/content/docs/architecture/` |
+| Documentation maintained next to core implementation | `molecule-ai/molecule-core/docs/` |
 
 **Default when uncertain:** `molecule-ai/internal/`. The friction of
 opening a separate repo PR is intentional — it forces you to make the
@@ -55,8 +56,9 @@ decision deliberately. The "I'll just dump it where my cwd happens to
 be" path is exactly how 79 internal files leaked publicly on
 2026-04-23.
 
-**These paths are CI-blocked in `molecule-monorepo`** — pushing them
-will fail with a clear error message:
+Internal research, marketing drafts, and temporary agent output are not public
+documentation. The policy gate in `molecule-core` rejects those classes, and
+the same routing rule applies to the public docs repository:
 
 - `/research/` — competitive briefs, market analysis
 - `/marketing/` — PMM, sales, press, drip, campaigns
@@ -79,9 +81,10 @@ git push -u origin HEAD
 tea pr create --base main --fill
 ```
 
-If your file is genuinely public-facing — final blog post, public
-tutorial, customer-shippable doc — write it under `molecule-monorepo/docs/`
-in one of `blog/`, `tutorials/`, `devrel/`, or `api/`.
+If your file is genuinely public-facing, place it in an existing section under
+`molecule-ai/docs/content/docs/` and update that section's navigation metadata.
+Implementation-adjacent core documentation belongs in
+`molecule-ai/molecule-core/docs/` only when it is owned with the code.
 
 **Quick gut check before any `git add`:** "Would I be comfortable if a
 competitor / journalist / customer read this verbatim today?" — yes →

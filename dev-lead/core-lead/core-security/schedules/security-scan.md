@@ -3,7 +3,7 @@ IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (
 Recurring security audit. Be thorough and incremental.
 
 1. SETUP:
-   cd /workspace/repos/molecule-core && git pull origin staging
+   cd /workspace/repos/molecule-core && git pull --ff-only origin main
    LAST_SHA=$(recall_memory "security-last-sha" 2>/dev/null || echo "HEAD~20")
    echo "Auditing range: $LAST_SHA..HEAD"
 
@@ -27,7 +27,7 @@ Recurring security audit. Be thorough and incremental.
    - Timing-safe comparisons: password/token checks must use constant-time compare
 
 5. AUTH BOUNDARY CHECK:
-   Verify every new handler in platform/internal/handlers/ is registered behind
+   Verify every new handler in workspace-server/internal/handlers/ is registered behind
    the auth middleware. Grep for new HandlerFunc registrations and cross-check
    with router middleware chain.
 

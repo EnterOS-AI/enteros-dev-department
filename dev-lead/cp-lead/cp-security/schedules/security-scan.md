@@ -3,7 +3,7 @@ IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (
 Recurring security audit. Be thorough and incremental.
 
 1. SETUP:
-   cd /workspace/repos/molecule-controlplane && git pull origin staging
+   cd /workspace/repos/molecule-controlplane && git pull --ff-only origin main
    LAST_SHA=$(recall_memory "security-last-sha" 2>/dev/null || echo "HEAD~20")
    echo "Auditing range: $LAST_SHA..HEAD"
 
@@ -29,7 +29,7 @@ Recurring security audit. Be thorough and incremental.
    - SQL injection: raw string concatenation in queries
    - Missing auth on new endpoints
    - Privilege escalation: admin-only routes accessible by tenant users
-   - Webhook signature verification: all incoming webhooks (Stripe, GitHub) must verify signatures
+   - Webhook signature verification: all incoming webhooks (Stripe, Gitea, or another configured integration) must verify signatures
    - Rate limiting: tenant-scoped rate limits on all write endpoints
 
 6. OPEN-PR REVIEW:

@@ -21,8 +21,8 @@ If you're tempted to relax a rule because it's slowing you down, read the incide
 **Rule:** Always verify with a second signal before reporting done.
 - "PR created" → `tea pr view <number>`
 - "Tests pass locally" → `tea pr checks <number>` after push
-- "Deploy succeeded" → `fly status` version bump + hit the endpoint
-- "Migration ran" → grep `fly logs` for the applied line
+- "Deploy succeeded" → terminal Gitea Actions result + expected registry artifact + domain endpoint check
+- "Migration ran" → migration evidence from the active deployment + direct schema verification through an authorized interface
 
 **Why:** Every agent (including me) has a stall path where a tool call errors silently and the agent reports the pre-error state as the post-success state. The second signal costs 5 seconds and catches 90% of phantom-success reports.
 
@@ -90,13 +90,16 @@ If you're tempted to relax a rule because it's slowing you down, read the incide
 
 ---
 
-## 8. Restart after every fix
+## 8. Verify the built and running artifact after every fix
 
-**Rule:** Any platform code change requires `go build -o server ./cmd/server` + restart the running process before you report done. Same for canvas (`npm run build` + restart dev server) and workspace-template (`pytest` + rebuild docker image if the change ships).
+**Rule:** Build and test the changed component locally, then after merge follow
+the repository's checked-in CI-on-merge workflow. Confirm the expected image or
+package and check the domain endpoint before reporting the change live.
 
 **Why:** The running binary is what matters, not the source. An auditor probe against a pre-restart binary is reporting the OLD behaviour. I lost a tick on this in #336 — the fix was on `main` but the running binary was 2 hours old. The auditor saw the pre-fix behaviour, filed a CRITICAL, I spent time debugging a fix that was actually already live.
 
-**Corollary:** "Deployed to Fly" = `fly status` shows new image digest. Anything less is aspirational.
+**Corollary:** "Deployed" requires the exact commit, a terminal publisher run,
+the expected artifact, and a live behavior check. Anything less is aspirational.
 
 ---
 
@@ -106,9 +109,14 @@ If you're tempted to relax a rule because it's slowing you down, read the incide
 
 **Why:** A triage operator guessing on design tends to optimize for local wins (add a flag, add an env var, add an opt-in) that accumulate into a system nobody understands. A triage operator guessing on credentials / dashboard actions tends to pick the wrong thing and create a second problem.
 
-**Example that worked:** WorkOS DNS + dashboard flip — I did NOT touch Cloudflare or WorkOS dashboards. I gave the user exact steps, updated the Fly secret, deployed, verified. Zero accidental config corruption.
+**Historical example that worked:** During the former provider-based deployment,
+the operator did not guess at Cloudflare or WorkOS dashboard state. They gave
+the user exact steps, changed only the authorized secret, deployed, and
+verified. The provider has changed; the evidence-first principle has not.
 
-**Example that didn't work (prior incident):** An agent guessed at DNS records for `moleculesai.app` → set A records that pointed to IPs that weren't Fly → hours of debugging. Rule created after.
+**Historical example that didn't work:** An agent guessed at DNS records for
+`moleculesai.app`, pointed them at the wrong infrastructure, and caused hours of
+debugging. This rule was created after that incident.
 
 ---
 

@@ -9,7 +9,7 @@ Expected wall-clock: **5–15 minutes** per tick when the backlog is small; up t
 ## Step 0 — Guard activation + learnings replay
 
 1. Invoke the `careful-mode` skill → loads REFUSE / WARN / ALLOW lists into your working context.
-2. Read the last 20 lines of `~/.claude/projects/-Users-hongming-Documents-GitHub-molecule-monorepo/memory/cron-learnings.jsonl`. This tells you:
+2. Read the last 20 lines of `~/.claude/projects/*/memory/cron-learnings.jsonl`. This tells you:
    - What the previous tick did
    - What the previous tick's `next_action` is expecting from you or from the CEO
    - Any open scope calls
@@ -21,13 +21,13 @@ Never skip Step 0. The cron-learnings file is your primary "what did past-me alr
 ## Step 1 — List state
 
 ```bash
-tea pr list --repo molecule-ai/molecule-monorepo --state open \
+tea pr list --repo molecule-ai/molecule-core --state open \
   --json number,title,author,isDraft,mergeable,statusCheckRollup,files
 
 tea pr list --repo molecule-ai/molecule-controlplane --state open \
   --json number,title,author,isDraft,mergeable
 
-tea issue list --repo molecule-ai/molecule-monorepo --state open \
+tea issue list --repo molecule-ai/molecule-core --state open \
   --json number,title,assignees,labels
 ```
 
@@ -44,11 +44,11 @@ For each open PR:
 `tea pr checks <N>`. All green? Proceed. Any fail or cancel? Investigate.
 
 - **Cancelled** = superseded by a newer push; rerun via `tea action rerun` if needed.
-- **Failed** = read the log (`tea action view <runId> --log-failed`). If the failure is mechanical (lint, import order, flaky fixture), go to Step 2a. If it caught a real bug, go to Step 2d.
+- **Failed** = read the log through the Gitea Actions UI or API. If the failure is mechanical (lint, import order, flaky fixture), go to Step 2a. If it caught a real bug, go to Step 2d.
 
 ### Gate 2 — Build
 
-Usually covered by Gate 1 CI, but confirm the build step specifically passed. On controlplane, that's the `build` job. On monorepo, that's `Platform (Go)` + `Canvas (Next.js)` + `MCP Server (Node.js)`.
+Usually covered by Gate 1 CI, but confirm the build step specifically passed. Read the current checked-in workflow and job names for each repository; do not rely on historical job labels.
 
 ### Gate 3 — Tests
 

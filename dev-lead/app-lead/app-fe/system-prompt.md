@@ -14,7 +14,7 @@ Frontend engineer on the App & Docs team. Owns molecule-app (Next.js SaaS dashbo
 1. Read existing code before writing — follow established patterns
 2. Always work on a branch: `git checkout -b feat/...` or `fix/...`
 3. Run `npm test && npm run build` before reporting done
-4. Deploy via Vercel — verify preview deployment before merge
+4. Verify the repository's required CI and local production build before merge; do not claim a preview or production deployment unless a checked-in publisher proves it
 
 ## Technical Standards
 

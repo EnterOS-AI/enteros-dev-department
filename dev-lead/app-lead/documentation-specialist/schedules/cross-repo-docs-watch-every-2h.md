@@ -1,7 +1,7 @@
 IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
 
 Cross-repo docs watch. Fire every 2 hours. Mandate: keep documentation in
-lockstep with the entire molecule-ai/* Gitea org (40+ repos), NOT just
+lockstep with the live molecule-ai/* Gitea org, NOT just
 molecule-core. Updates that match repository state are owned by Doc Specialist
 alone — no marketing approval needed. Marketing only enters the picture for
 promotional spin on top of factual changes (e.g. blog post for a major release).
@@ -17,7 +17,7 @@ echo "Window: $LAST_TICK → $NOW_TS"
 ## 2. ENUMERATE every Molecule-AI repo (live list, don't trust the prior cache)
 
 ```bash
-tea repos ls --org molecule-ai --limit 60 --json name,description,updatedAt,visibility \
+tea repos ls --org molecule-ai --limit 100 --json name,description,updatedAt,visibility \
   > /tmp/org-repos.json
 ```
 
@@ -35,13 +35,13 @@ tea pr list --repo molecule-ai/<repo> --state merged \
 ```
 
 For each merged PR, check `files`:
-- Touches a public API (`platform/internal/handlers/`, `platform/internal/router/`) → docs site `api-reference.mdx` likely needs update.
-- Touches a template repo (`workspace-configs-templates/*`, standalone template repo) → docs site `org-template.mdx` or `concepts.mdx`.
+- Touches a public API (`workspace-server/internal/handlers/`, `workspace-server/internal/router/`) → the matching page under `content/docs/api-reference/` likely needs an update.
+- Touches a standalone workspace or org template repository → docs site `org-template.mdx` or `concepts.mdx`.
 - Touches a plugin repo → docs site `plugins.mdx` (and the plugin repo's own README).
-- Touches a channel adapter (`platform/internal/channels/`, e.g. the new `lark.go` or `slack.go`) → docs site `channels.mdx`.
+- Touches a channel adapter (`workspace-server/internal/channels/`) → docs site `channels.mdx`.
 - Touches a schedule / cron / workflow → docs site `schedules.mdx`.
 - Touches `migrations/` → docs site `architecture.mdx` schema section + a callout in the daily changelog.
-- Touches CI (`*.yml` in `.github/workflows/`) → typically internal-only; skip unless it changes a publicly-documented release/deploy flow.
+- Touches CI (`*.yml` in `.gitea/workflows/`) → typically internal-only; skip unless it changes a publicly documented release or deployment flow.
 - Touches `controlplane/` (PRIVATE repo) → update `controlplane/README.md` and `controlplane/PLAN.md`. **NEVER mention controlplane internals in public docs site.** Per privacy rule.
 
 ## 4. WRITE THE DOCS PR
@@ -120,7 +120,7 @@ commit_memory(
    This is the team's private knowledge base. You own keeping it current:
    - PLAN.md — product roadmap. Update when phases complete or priorities shift.
    - known-issues.md — update when issues are resolved or new ones discovered.
-   - runbooks/ — operational playbooks. Update when infra changes (e.g. Fly.io → Railway migration).
+   - runbooks/ — operational playbooks. Update when domains, CI-on-merge workflows, registries, or workspace-fleet behavior change.
    - security/ — threat models and findings. Sync with Security Auditor's audit outputs.
    - retrospectives/ — session retrospectives. Add entries after major incidents or milestones.
    - ecosystem-watch.md, ecosystem-research-outcomes.md — sync with Research Lead outputs.
@@ -128,5 +128,5 @@ commit_memory(
    Every 2h check:
    tea pr list --repo molecule-ai/internal --state open --json number,title
    curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/molecule-ai/internal/commits --jq '.[0:3] | .[] | "\(.sha[:8]) \(.commit.message | split("\n") | first)"'
-   If internal docs are stale vs actual platform state (e.g. still reference Fly.io), open a PR to fix.
+   If internal docs are stale versus the checked platform and deployment state, open a PR to fix them.
    NEVER copy internal content to public repos (molecule-core, docs). Privacy rule applies.

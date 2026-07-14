@@ -21,7 +21,7 @@ STEP 3 — CROSS-TEAM DEPENDENCY:
 
 STEP 4 — MERGE TEAM PRs (per SHARED_RULES.md rule 9 — you ARE the merger for Dev team PRs):
   for repo in molecule-core molecule-controlplane molecule-app molecule-tenant-proxy molecule-ai-workspace-runtime docs molecule-ci; do
-    tea pr list --repo molecule-ai/$repo --state open --base staging --json number,title,statusCheckRollup,reviews 2>/dev/null
+    tea pr list --repo molecule-ai/$repo --state open --base main --json number,title,statusCheckRollup,reviews 2>/dev/null
   done
   For EACH PR authored by your team:
   - Verify all 4 gates from rule 10 are present:
@@ -40,6 +40,6 @@ STEP 5 — REPORT (brief):
 
 RULES:
 - Engineers self-organize via hourly work crons. Your job is unblocking + merging.
-- All PRs target staging. Merge-commits only (`--merge`, never `--squash` or `--rebase`).
+- All PRs target protected `main`. Merge-commits only (`--merge`, never `--squash` or `--rebase`).
 - You ARE the merger for Dev team PRs (rule 9). Do not delegate the merge — you own that gate.
 - Escalate to PM only for cross-team trade-offs or CEO-level decisions (rule 12).

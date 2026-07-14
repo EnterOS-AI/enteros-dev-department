@@ -12,7 +12,7 @@ Work cycle. Be productive every tick.
 3. PICK UP WORK (if no active assignment):
    tea issue list --repo molecule-ai/molecule-core --state open --json number,title,labels,assignees --jq '.[] | select(.assignees | length == 0)' | head -20
    Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.
-   Self-assign it, create a branch off staging, implement the fix, run tests, open a PR targeting staging (--merge flag only). Code > triage — do NOT just file more issues.
+   Self-assign it, create a branch from current main, implement the fix, run tests, and open a PR targeting main (--merge flag only). Code > triage — do NOT just file more issues.
 
 4. CONTINUE ACTIVE WORK:
    If you have an open PR with CI feedback, address it.

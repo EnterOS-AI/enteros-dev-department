@@ -6,31 +6,32 @@ The four **Philosophy** sections below frame how we approach all work. Every spe
 
 ---
 
-## ⚠️ Post-2026-05-06 migration in progress (2026-05-07)
+## Canonical Platform Access
 
-The GitHub `Molecule-AI` org was suspended on 2026-05-06 and is permanently gone. Canonical SCM is now Gitea at `https://git.moleculesai.app/molecule-ai/`. Across all persona files, every `gh ...` invocation has been migrated to `tea ...` (Gitea's official CLI) or `curl` against the Gitea API for paths `tea` doesn't cover.
+The former GitHub `Molecule-AI` organization was suspended on 2026-05-06.
+Canonical source control and Actions are now Gitea at
+`https://git.moleculesai.app/molecule-ai/`. Use `tea` or the Gitea REST API;
+never route repository work through GitHub.
 
-**Tea install (run once at persona boot if not already on PATH):**
+The current access map is domain-only:
 
-```bash
-# Install tea v0.9.2 — Gitea CLI, gh-equivalent for Gitea
-if ! command -v tea >/dev/null; then
-  wget -qO /tmp/tea https://gitea.com/gitea/tea/releases/download/v0.9.2/tea-0.9.2-linux-amd64
-  chmod +x /tmp/tea && sudo mv /tmp/tea /usr/local/bin/tea
-fi
+- SCM and Actions: `https://git.moleculesai.app`
+- secrets system of record: Infisical at `https://key.moleculesai.app`
+- production control-plane API: `https://api.moleculesai.app`
+- staging control-plane API: `https://staging-api.moleculesai.app`
+- tenant workspaces: `https://<slug>.moleculesai.app`
+- OCI images: `registry.moleculesai.app`
 
-# Authenticate (uses GITEA_TOKEN env var injected by workspace bootstrap; see internal#44)
-if [ -n "${GITEA_TOKEN:-}" ]; then
-  tea login add --name molecule --url https://git.moleculesai.app --token "${GITEA_TOKEN}" 2>/dev/null || true
-fi
-```
+There is no operator host or SSH-based deploy path. `GITEA_TOKEN` is injected
+as the current workspace persona's scoped credential. Do not borrow a founder
+or administrator token, embed a token in a clone URL, or persist credentials in
+the repository remote.
 
-**Two known limitations until follow-up issues land:**
-
-1. **`GITEA_TOKEN` env var must be present** for `tea` (and `curl` calls) to authenticate. Tracked: [`internal#44`](https://git.moleculesai.app/molecule-ai/internal/issues/44) (workspace-bootstrap injection). Until that lands, the migrated `tea ...` calls will fail with auth errors. Public-repo reads (e.g. `tea repos ls --org molecule-ai`) work without a token; private-repo + write operations (PR create / merge / issue create) need the token.
-2. **`tea` is per-job-installed**, not pre-baked into the runner image (per orchestrator's Q2 decision: act_runner image is mid-stabilization, pre-bake parked for image-v2 work). The install snippet above runs at persona boot.
-
-**`gh ...` in this file** (and across all persona files) has been substituted to `tea ...` mechanically. If you find a `gh ...` reference that wasn't caught, file an addition under the parent issue [`internal#45`](https://git.moleculesai.app/molecule-ai/internal/issues/45).
+Merges to `main` trigger deployment only in repositories that have a checked-in
+publisher workflow. Verify the workflow and its terminal result for the target
+repository before saying a change is deployed. In particular, documentation
+publishing remains manual and `molecule-app` has no repository-owned production
+publisher; a merge or successful build alone is not proof that either is live.
 
 ---
 
@@ -102,7 +103,7 @@ The team's recent telemetry showed only 9 internal-doc references across 7,076 a
 1. **Never fabricate infrastructure details.** If you don't have direct access to verify something (server names, runner configs, SSH access, cache states), say "I cannot verify" — do NOT invent plausible-sounding details.
 
 2. **Distinguish observation from inference.**
-   - Observation: "gh CLI returns 401 on all API calls"
+   - Observation: "tea returns 401 on all API calls"
    - Inference (BAD): "CI runner hongming-claws has Go module cache corruption"
    - Say what you tried, what error you got, and stop there.
 
@@ -120,41 +121,30 @@ The team's recent telemetry showed only 9 internal-doc references across 7,076 a
 
 ## Why These Rules Exist
 
-When an agent encounters an error it cannot resolve (e.g., a 401 from GitHub), there is a strong temptation to hypothesize a root cause and present it as fact. This is hallucination — fabricating plausible-sounding infrastructure details (server names, cache states, SSH targets) that do not exist. When these fabrications enter the A2A delegation chain, they get amplified: Agent A invents a detail, Agent B cites it as confirmed, PM aggregates it into a "platform emergency," and the CEO spends hours chasing a ghost.
+When an agent encounters an error it cannot resolve (for example, a 401 from Gitea), there is a strong temptation to hypothesize a root cause and present it as fact. This is hallucination — fabricating plausible-sounding infrastructure details (server names, cache states, SSH targets) that do not exist. When these fabrications enter the A2A delegation chain, they get amplified: Agent A invents a detail, Agent B cites it as confirmed, PM aggregates it into a "platform emergency," and the CEO spends hours chasing a ghost.
 
 The fix is simple: report exactly what you observed, say "I don't know" for everything else, and verify peer claims before forwarding them.
 
-## Git Workflow — Staging First, Always
+## Git Workflow — Branch and PR to Main
 
-**NEVER merge directly to main.** All code changes follow this workflow:
+Never push directly to `main`. Every change follows this workflow:
 
-1. **Branch** from `staging` (not main): `git checkout -b fix/my-fix staging`
-2. **Push** to your branch and open a PR targeting `staging`
-3. **CI must pass** on staging before merge — if CI is red, fix it yourself, don't escalate
-4. **Staging deploy** — after merge to staging, verify on the staging site
-5. **Staging → main** — only after staging is verified working, open a PR from staging to main
-6. **Main is protected** — requires CI pass + review. Never bypass, never ask CEO to bypass
-
-**Why:** Direct-to-main merges have broken production multiple times. Staging exists as a safety gate. Use it.
-
-**Repos that need this workflow:**
-- `molecule-core` (platform + canvas)
-- `molecule-controlplane`
-- `molecule-tenant-proxy`
-- `molecule-app`
-
-**Repos where direct-to-main is OK** (no staging needed):
-- `docs`, `landingpage`, `internal` — content-only repos
-- `molecule-ai-plugin-*` — standalone plugins
-- `molecule-ai-workspace-template-*` — templates
-- `molecule-ai-org-template-*` — org templates
+1. Update a clean local base with `git switch main && git pull --ff-only`.
+2. Create a feature, fix, chore, or documentation branch from current `main`.
+3. Push the branch and open a PR targeting `main`.
+4. Satisfy the repository's required CI, review, and human-only SOP gates.
+5. Merge through the normal protected-branch path; never bypass protection or
+   ask another operator to bypass it.
+6. After merge, verify the target repository's actual deploy workflow and the
+   user-visible or system-visible result. A staging *environment* may be part of
+   verification, but there is no organization-wide staging branch workflow.
 
 ## Credential Rules
 
-1. **NEVER share tokens in Slack channels.** Tokens are env vars, not messages.
-2. **NEVER ask other agents for their PAT/token.** Each agent gets its own `ghs_` token from the platform.
-3. **If your token is expired**, wait for the next cron restart or report "GH_TOKEN 401" — do NOT fabricate that someone else has a "Classic PAT."
-4. **NEVER post credentials in GitHub issue/PR bodies or commit messages.**
+1. **Never share tokens in channels, comments, issue/PR bodies, commits, or memory.** Credentials are runtime bindings, not messages.
+2. **Never ask another agent for its PAT/token.** Each workspace uses its own persona-scoped `GITEA_TOKEN` from Infisical.
+3. **On authentication failure, quote the exact command and response.** Do not infer token type, scope, or expiry without evidence; retry only after the binding is refreshed or the owning lead authorizes escalation.
+4. **Never use a founder or shared administrator credential for routine persona work.**
 
 ## Documentation Policy — Where Docs Live
 
@@ -176,11 +166,11 @@ The fix is simple: report exactly what you observed, say "I don't know" for ever
 
 **Full policy:** https://git.moleculesai.app/molecule-ai/internal/blob/main/DOCUMENTATION_POLICY.md
 
-### NEVER write internal content to the public monorepo
+### Never write internal content to the public core repository
 
-CEO directive 2026-04-23, after 79 internal files leaked into the public
-`molecule-monorepo`. The following paths in `Molecule-AI/molecule-monorepo`
-are now **CI-blocked** — your PR will fail with a clear error if you try:
+CEO directive 2026-04-23, after 79 internal files leaked into the repository
+then named `molecule-monorepo`, now `molecule-core`. The following paths in
+`molecule-ai/molecule-core` are CI-blocked:
 
 - `/research/` — competitive briefs, market analysis
 - `/marketing/` — PMM, sales, press, drip, campaigns
@@ -212,12 +202,12 @@ different products with different audiences and different durability
 guarantees — making the decision explicit at write time prevents the
 "easiest path my cwd resolves to" failure mode that caused this leak.
 
-If you genuinely need to add a new top-level path in the public monorepo
+If you genuinely need to add a new top-level path in the public core repository
 that happens to match a forbidden pattern (e.g. a renamed `research/`
 directory for a public benchmark), do not work around the gate by
 renaming. Open a PR editing
-`molecule-monorepo/.github/workflows/block-internal-paths.yml` with
-human reviewer signoff and a clear public-facing justification.
+`molecule-core/.gitea/workflows/block-internal-paths.yml` with human reviewer
+signoff and a clear public-facing justification.
 
 ## A2A Sync-Message Dedup — Don't Bombard PMs After Incidents
 
@@ -275,12 +265,14 @@ Before posting "Phase X ships date Y" or "needs decision on Z":
 
 ## Token Expiry Is Not a P0
 
-If you see `gh: HTTP 401` or `git: authentication failed` or `GH_TOKEN invalid`:
+If you see `tea: HTTP 401`, `git: authentication failed`, or a Gitea API 401:
 
-1. This is the GitHub App installation token TTL (60 min). Tracked in `internal/security/credential-token-backlog.md`.
-2. Do NOT escalate to ops or ceo-feed.
-3. The auto-refresh daemon will fix it within ~45 min. The maintenance cron also pushes manual refreshes.
-4. Queue the work, retry on next cycle, do not generate noise asking for a PAT.
+1. Record the exact error and operation; do not guess whether the cause is
+   expiry, scope, injection, or service availability.
+2. Confirm the workspace received its own `GITEA_TOKEN` binding without
+   printing the value.
+3. Retry after the platform refreshes that binding, or escalate once to the
+   owning lead with the evidence. Do not ask another agent for a PAT.
 
 ## Slack Noise Discipline
 
@@ -349,14 +341,14 @@ Every PR opened in `internal` or `molecule-core` MUST follow `.gitea/pull_reques
 Your workspace only has the secrets your role needs. See [SECRETS_MATRIX.md](./SECRETS_MATRIX.md) for the full table.
 
 Examples:
-- Engineers have `GH_TOKEN` scoped to PR-author — `tea pr create` works, `tea pr merge` does not
+- Engineers have `GITEA_TOKEN` scoped to PR-author — `tea pr create` works, `tea pr merge` does not
 - Marketing Lead has LinkedIn + X API keys; other marketing roles draft via PRs
 - PM has the `TELEGRAM_BOT_TOKEN` for CEO comms; nobody else does
-- Production AWS/Fly/Vercel keys live ONLY in DevOps/SRE/Infra-Runtime-BE workspaces
+- Operational roles receive only exact task-specific values bound from Infisical
 
 If you find yourself wanting a secret you don't have, STOP. Either your role isn't supposed to do that action (escalate per the ladder below), or the matrix is wrong (file an issue tagged `area:secrets-matrix`).
 
-Never paste secrets into Slack, GitHub comments, PR bodies, issue bodies, or memory commits.
+Never paste secrets into Slack, Gitea comments, PR bodies, issue bodies, or memory commits.
 
 ## Decision Escalation Ladder
 
@@ -452,7 +444,7 @@ devops/uiux) — those ship directly to `molecule-core`/`molecule-app`/
   produces ends up there, so the org never loses context.
 - **Public repos stay curated** — only content that passes a lead's
   review gets seen by users/customers/competitors.
-- **The CI gate** in `molecule-monorepo` blocking `/research/`,
+- **The CI gate** in `molecule-core` blocking `/research/`,
   `/marketing/`, `/docs/marketing/` still applies as a last-resort
   backstop for the rare case a worker mis-routes.
 

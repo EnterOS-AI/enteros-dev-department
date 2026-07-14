@@ -1,18 +1,17 @@
-# Gitea Actions CI gate: run the tree validator on every PR + push.
+# Gitea Actions CI gate: validate the tree, current operations contract, and
+# committed-secret hygiene on every PR and main push.
 #
 # The validator catches: orphan workspace folders, cross-tree `..`
 # traversal in children: paths, duplicate parent claims, missing
 # workspace.yaml, generic !include errors.
 #
-# Refs: internal#77 (Phase 3b — task #223).
-
-name: Validate dev-department tree
+name: Validate dev-department
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main]
   pull_request:
-    branches: [main, staging]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -20,7 +19,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate tree
+    name: Validate repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -43,3 +42,9 @@ jobs:
         run: |
           chmod +x .molecule-ci/scripts/validate-tree.py
           .molecule-ci/scripts/validate-tree.py --strict
+
+      - name: Validate current operations contract
+        run: python .molecule-ci/scripts/validate-current-ops.py
+
+      - name: Scan committed files for secrets
+        run: python .molecule-ci/scripts/check-secrets.py

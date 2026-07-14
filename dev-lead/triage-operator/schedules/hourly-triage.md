@@ -4,7 +4,7 @@ PRIORITY #1: MERGE AUTHORITY — merging PRs is your highest-priority task.
 PRs waiting for merge block the entire team. Check and merge FIRST, then triage.
 
 Run the full triage cycle per
-/workspace/repo/org-templates/molecule-dev/triage-operator/playbook.md.
+/workspace/dev-department/dev-lead/triage-operator/playbook.md.
 
 Summary of what to do (authoritative details in the playbook):
 

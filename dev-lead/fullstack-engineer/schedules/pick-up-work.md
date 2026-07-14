@@ -9,8 +9,8 @@ Work cycle. Be productive every tick. You are a floater engineer.
 2. PICK UP WORK (if no active assignment):
    Look for cross-cutting issues spanning multiple repos:
    tea issue list --repo molecule-ai/molecule-core --state open --json number,title,labels,assignees --jq '.[] | select(.assignees | length == 0)' | head -20
-   Prefer issues that touch both platform/ (Go) and canvas/ (TypeScript).
-   Self-assign, create a branch off staging, implement, test, open PR targeting staging (--merge flag only).
+   Prefer issues that touch both workspace-server/ (Go) and canvas/ (TypeScript).
+   Self-assign, create a branch from current main, implement, test, and open a PR targeting main (--merge flag only).
 
 3. CONTINUE ACTIVE WORK:
    Check for open PRs with review feedback:
