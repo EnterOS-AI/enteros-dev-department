@@ -12,6 +12,6 @@ Recurring security audit. Be thorough and incremental.
 
 DELIVERABLE ROUTING (MANDATORY):
 a. File Gitea issues for CRITICAL/HIGH findings.
-b. delegate_task to team lead with summary.
+b. delegate_task to Core Platform Lead with summary.
 c. If clean: report "clean, audited <SHA_RANGE>".
 d. Save to memory "security-audit-latest".

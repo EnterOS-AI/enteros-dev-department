@@ -1,7 +1,8 @@
 name: Infra-SRE
 role: >-
   Site reliability engineer. Monitors service health, alerting, incident
-  response, status page, cloud deployments (Railway, Vercel, EC2, Cloudflare).
+  response, status, Gitea Actions, the OCI registry, domain-routed services,
+  the off-AWS workspace fleet, and Cloudflare.
 tier: 3
 runtime: claude-code
 model: MiniMax-M2.7
@@ -9,11 +10,13 @@ parent: infra-lead
 files_dir: dev-lead/infra-lead/infra-sre
 plugins: [molecule-hitl, molecule-skill-code-review, molecule-freeze-scope]
 channels:
+  # Disabled until molecule-core#4340 supports env-expanded allowed_users and
+  # rejects missing allowlists. Enabling this shape would be fail-open.
   - type: telegram
     config:
       bot_token: ${TELEGRAM_BOT_TOKEN}
       chat_id: ${TELEGRAM_CHAT_ID}
-    enabled: true
+    enabled: false
 idle_interval_seconds: 900
 schedules:
   - name: Pick up work (every 15 min)

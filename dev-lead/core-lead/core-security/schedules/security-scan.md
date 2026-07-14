@@ -3,14 +3,14 @@ IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (
 Recurring security audit. Be thorough and incremental.
 
 1. SETUP:
-   cd /workspace/repos/molecule-core && git pull origin staging
+   cd /workspace/repos/molecule-core && gitea_git pull --ff-only origin main
    LAST_SHA=$(recall_memory "security-last-sha" 2>/dev/null || echo "HEAD~20")
    echo "Auditing range: $LAST_SHA..HEAD"
 
 2. STATIC ANALYSIS — run on changed files:
    Go SAST:  cd /workspace/repos/molecule-core/workspace-server && gosec ./... 2>&1 | head -50
    Python:   cd /workspace/repos/molecule-core/workspace && bandit -r . 2>&1 | head -50
-   CodeQL (if configured): curl -H "Authorization: token ${GITEA_TOKEN}" https://git.moleculesai.app/api/v1/repos/molecule-ai/molecule-core/code-scanning/alerts --jq '.[0:5]'
+   Gitea Actions: inspect the checked-in security workflow, then use `gitea_api GET 'repos/molecule-ai/molecule-core/actions/runs?limit=5' | python3 -m json.tool` and verify the matching head SHA and terminal conclusion.
 
 3. SECRETS SCAN — check for hardcoded credentials:
    cd /workspace/repos/molecule-core
@@ -27,7 +27,7 @@ Recurring security audit. Be thorough and incremental.
    - Timing-safe comparisons: password/token checks must use constant-time compare
 
 5. AUTH BOUNDARY CHECK:
-   Verify every new handler in platform/internal/handlers/ is registered behind
+   Verify every new handler in workspace-server/internal/handlers/ is registered behind
    the auth middleware. Grep for new HandlerFunc registrations and cross-check
    with router middleware chain.
 
@@ -35,13 +35,13 @@ Recurring security audit. Be thorough and incremental.
    Teardown any DAST tooling after checks complete.
 
 7. OPEN-PR REVIEW:
-   tea pr list --repo molecule-ai/molecule-core --state open --json number,title,files --limit 10
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
    For each open PR diff, check for injection/exec/unsafe patterns.
 
 8. RECORD commit SHA: commit_memory "security-last-sha" with current HEAD.
 
 DELIVERABLE ROUTING (MANDATORY):
 a. File Gitea issues for CRITICAL/HIGH findings.
-b. delegate_task to team lead with summary.
+b. delegate_task to Core Platform Lead with summary.
 c. If clean: report "clean, audited <SHA_RANGE>".
 d. Save to memory "security-audit-latest".

@@ -1,7 +1,9 @@
 PRIORITY 1 — REVIEW DOCS PRs:
-   tea pr list --repo molecule-ai/docs --state open --json number,title
+   gitea_api GET 'repos/molecule-ai/docs/pulls?state=open&limit=50' | python3 -m json.tool
    For each open PR: read the diff, check writing quality, accuracy, formatting.
-   Approve with tea pr review <number> --approve --repo molecule-ai/docs, or request changes.
+   Post `{"event":"APPROVED","body":"<review>"}` or
+   `{"event":"REQUEST_CHANGES","body":"<findings>"}` to
+   `repos/molecule-ai/docs/pulls/<number>/reviews` through `gitea_api`.
    Fast turnaround unblocks merges.
 
 IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (known-issues.md), runbooks before starting work.
@@ -12,7 +14,7 @@ Work cycle. Be productive every tick.
    Pull latest on your assigned repos.
 
 2. CHECK ASSIGNMENTS:
-   Check Gitea issues assigned to you. Check for tasks from your team lead.
+   Check Gitea issues assigned to you. Check for tasks from App & Docs Lead.
 
 3. PICK UP WORK (if no active assignment):
    Check open issues in your repos. Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.

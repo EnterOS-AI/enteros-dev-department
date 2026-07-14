@@ -1,0 +1,3 @@
+category_routing:
+  security: [Core-Security, Missing Security Role]
+workspace_names: [Core-Security]

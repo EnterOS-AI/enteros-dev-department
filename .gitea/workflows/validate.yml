@@ -1,18 +1,17 @@
-# Gitea Actions CI gate: run the tree validator on every PR + push.
+# Gitea Actions CI gate: validate the tree, current operations contract, and
+# committed-secret hygiene on every PR and main push.
 #
 # The validator catches: orphan workspace folders, cross-tree `..`
 # traversal in children: paths, duplicate parent claims, missing
 # workspace.yaml, generic !include errors.
 #
-# Refs: internal#77 (Phase 3b — task #223).
-
-name: Validate dev-department tree
+name: Validate dev-department
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main]
   pull_request:
-    branches: [main, staging]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -20,7 +19,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate tree
+    name: Validate repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -37,9 +36,16 @@ jobs:
           python-version: '3.11'
 
       - name: Install PyYAML
-        run: python -m pip install --no-input --disable-pip-version-check pyyaml==6.0.1
+        run: python3 -m pip install --no-input --disable-pip-version-check pyyaml==6.0.1
+
+      - name: Run contract regression tests
+        run: python3 -m unittest discover -s .molecule-ci/tests -p 'test_*.py'
 
       - name: "Run validator (--strict: hard-fail on cross-tree '..')"
-        run: |
-          chmod +x .molecule-ci/scripts/validate-tree.py
-          .molecule-ci/scripts/validate-tree.py --strict
+        run: python3 .molecule-ci/scripts/validate-tree.py --strict
+
+      - name: Validate current operations contract
+        run: python3 .molecule-ci/scripts/validate-current-ops.py
+
+      - name: Scan committed files for secrets
+        run: python3 .molecule-ci/scripts/check-secrets.py

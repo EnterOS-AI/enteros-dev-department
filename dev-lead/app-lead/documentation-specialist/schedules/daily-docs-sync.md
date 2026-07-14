@@ -8,32 +8,33 @@ Daily documentation maintenance. Two parallel objectives:
 (2) backfill stub pages on the docs site one at a time.
 
 SETUP:
-  cd /workspace/repo && git pull 2>/dev/null || true
-  cd /workspace/docs && git pull 2>/dev/null || true
-  cd /workspace/controlplane && git pull 2>/dev/null || true
+  gitea_git -C /workspace/repo pull --ff-only
+  gitea_git -C /workspace/docs pull --ff-only
+  gitea_git -C /workspace/controlplane pull --ff-only
 
 1a. PAIR RECENT PLATFORM PRS (last 24h):
    cd /workspace/repo
-   tea pr list --repo molecule-ai/molecule-monorepo --state merged \
-     --search "merged:>$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)" \
-     --json number,title,files
+   SINCE=$(python3 -c 'from datetime import datetime,timedelta,timezone; print((datetime.now(timezone.utc)-timedelta(hours=24)).isoformat().replace("+00:00","Z"))')
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=closed&limit=50' |
+     SINCE="$SINCE" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if p.get("merged_at") and p["merged_at"] >= os.environ["SINCE"]], indent=2))'
+   Fetch `pulls/<number>/files` for each selected PR before deciding its docs impact.
    For each merged PR that touches a public surface
-   (platform/internal/handlers/, plugins/*, org-templates/*,
-   docs/architecture.md, README.md, workspace-template/adapters/*):
+   (workspace-server/internal/handlers/, canvas/, docs/, or README.md):
    - Identify which docs page(s) on the public site cover that surface.
    - If a docs page exists but is stale → update it with examples
      from the PR diff. Open a PR to molecule-ai/docs with the change.
    - If NO docs page exists for the new surface → propose one
      (add to content/docs/meta.json + new .mdx file). Open a PR.
-   - Always close PRs with `Closes platform PR #N` so the link is durable.
+   - Link the originating molecule-core PR in the docs PR body. Do not use a
+     cross-repository `Closes` claim unless the tracker is configured for it.
 
 1b. PAIR RECENT CONTROLPLANE PRS (last 24h):
    cd /workspace/controlplane
-   tea pr list --repo molecule-ai/molecule-controlplane --state merged \
-     --search "merged:>$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)" \
-     --json number,title,files
+   gitea_api GET 'repos/molecule-ai/molecule-controlplane/pulls?state=closed&limit=50' |
+     SINCE="$SINCE" python3 -c 'import json,os,sys; print(json.dumps([p for p in json.load(sys.stdin) if p.get("merged_at") and p["merged_at"] >= os.environ["SINCE"]], indent=2))'
+   Fetch `pulls/<number>/files` for each selected PR before deciding its docs impact.
    ⚠️  PRIVATE REPO. Two cases:
-   (i) Internal-only change (handler, schema, infra, fly.toml,
+   (i) Internal-only change (handler, schema, deployment configuration,
        billing logic): update README.md + PLAN.md + any
        docs/internal/*.md inside molecule-controlplane itself.
        Open the PR against molecule-ai/molecule-controlplane.
@@ -41,8 +42,8 @@ SETUP:
    (ii) Customer-facing change (new tier, new region, new SLA,
        pricing change, signup flow change): write a sanitized
        description for the PUBLIC docs site (e.g. "We now offer
-       EU-region tenants" — NOT "controlplane reads FLY_REGION
-       from env and passes it to provisioner.go:142"). Open a
+       EU-region tenants" — not an internal file path, secret name,
+       or provisioner implementation detail). Open a
        PR against molecule-ai/docs.
    When unsure which category a change falls into: default to
    INTERNAL-only and ask PM for explicit approval before publishing.
@@ -54,9 +55,9 @@ SETUP:
    channels, schedules, architecture, api-reference, self-hosting,
    observability, troubleshooting). Write 300-800 words of
    hand-crafted, example-rich content based on:
-   - The actual code in /workspace/repo/platform/internal/handlers/
-   - The actual templates in /workspace/repo/org-templates/
-   - The actual plugin manifests in /workspace/repo/plugins/
+   - The actual code in /workspace/repo/workspace-server/internal/handlers/
+   - The actual source repository for any template being documented
+   - The actual source repository for any plugin being documented
    Cite file paths so readers can follow the source. Open a PR.
 
 3. LINK + ANCHOR CHECK:

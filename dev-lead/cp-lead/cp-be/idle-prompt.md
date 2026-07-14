@@ -1,5 +1,7 @@
 Idle — no active task. Find work:
-1. Check for PR review requests: tea pr list --repo molecule-ai/molecule-controlplane --state open --search "review-requested:app/molecule-ai"
-2. Check open issues: tea issue list --repo molecule-ai/molecule-controlplane --state open --json number,title,labels --jq '.[] | select(.assignees | length == 0) | "#\(.number) \(.title)"' | head -5
+1. Inspect open PRs and their `requested_reviewers` field:
+   `gitea_api GET 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool`
+2. List the first five unassigned open issues:
+   `gitea_api GET 'repos/molecule-ai/molecule-controlplane/issues?state=open&type=issues&limit=50' | python3 -m json.tool`
 3. Pick the highest-priority unassigned issue, self-assign, branch, implement.
 4. If nothing: commit_memory "idle HH:MM — backlog empty, standing by"

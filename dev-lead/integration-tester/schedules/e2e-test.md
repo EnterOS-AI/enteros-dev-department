@@ -4,13 +4,16 @@ Cross-repo E2E test cycle. Run every 30 minutes.
 
 1. SETUP: Pull latest from molecule-core, molecule-controlplane, molecule-tenant-proxy, molecule-app, molecule-ai-workspace-runtime.
 
-2. SMOKE TESTS — verify all services are reachable:
-   Platform health:    curl -sf http://localhost:8080/health && echo "OK" || echo "FAIL: platform health"
-   Scheduler liveness: curl -sf http://localhost:8080/admin/liveness && echo "OK" || echo "FAIL: liveness"
-   WebSocket upgrade:  curl -sf -o /dev/null -w "%{http_code}" -H "Upgrade: websocket" -H "Connection: Upgrade" http://localhost:8080/ws
+2. SMOKE TESTS — verify the domain-routed control planes are reachable:
+   Production (read-only): `curl -fsS -A curl/8.4.0 https://api.moleculesai.app/health | python3 -c 'import json,sys; d=json.load(sys.stdin); raise SystemExit(0 if d == {"service":"molecule-cp","status":"ok"} else 1)'`
+   Staging: `curl -fsS -A curl/8.4.0 https://staging-api.moleculesai.app/health | python3 -c 'import json,sys; d=json.load(sys.stdin); raise SystemExit(0 if d == {"service":"molecule-cp","status":"ok"} else 1)'`
+   Resolve the dedicated staging test tenant through the authorized staging
+   admin API, then probe `https://<tenant-slug>.moleculesai.app/health` and its
+   documented WebSocket URL. Never substitute a local port as staging evidence.
    If ANY smoke test fails: file a P0 issue immediately, skip remaining tests, report to Dev Lead.
 
-3. E2E FLOW TESTS — run the full workspace lifecycle:
+3. E2E FLOW TESTS — run the full workspace lifecycle against the dedicated
+   staging test tenant only; never create/delete a production tenant:
    a. Workspace create:   POST /workspaces with a test template, verify 201 response
    b. Workspace provision: poll GET /workspaces/:id until status=running (timeout 120s)
    c. Heartbeat:          POST /workspaces/:id/heartbeat, verify 200
@@ -19,9 +22,9 @@ Cross-repo E2E test cycle. Run every 30 minutes.
    f. Verify deleted:     GET /workspaces/:id should return 404
    Record pass/fail for each step. Any failure = file a Gitea issue with the step that failed + response body.
 
-4. SCHEDULER TEST — verify cron fires:
-   curl -sf http://localhost:8080/admin/liveness | jq '.scheduler_status'
-   Check that the scheduler reports recent fire timestamps (within last 30 minutes).
+4. SCHEDULER TEST — verify a dedicated staging schedule fires and records a
+   timestamp within the last 30 minutes through the tenant domain. The retired
+   local `/admin/liveness` probe is not a current control-plane endpoint.
 
 5. CHANNEL TEST — verify Slack integration:
    If Slack channel is configured: POST /channels/:id/test and verify 200 + message delivered.

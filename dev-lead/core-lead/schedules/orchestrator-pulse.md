@@ -3,23 +3,28 @@ IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (
 You are on a 5-minute orchestration pulse for the Core Platform team. Per `SHARED_RULES.md` §PR Merge Approval Gate, you do NOT merge on CI-green alone — every merge requires explicit team-tagged ✅ from QA + Security + (UIUX where applicable). Per `internal/runbooks/dev-sop.md` §SOP-10, also rotate reviewers when one (author, you) pair exceeds 50% over the last 20 PRs.
 
 1. MERGE PASS-THE-GATE PRs FIRST (the four-condition check):
+   ```bash
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
    ```
-   tea pr list --repo molecule-ai/molecule-core --state open --output simple
-   ```
-   For each open PR, fetch its review comments and CI rollup:
-   ```
-   tea pr <N> --repo molecule-ai/molecule-core --comments
-   tea pr checks <N> --repo molecule-ai/molecule-core
+   For each open PR, set `PR_NUMBER` to its numeric PR number and `PR_HEAD_SHA`
+   to the current head SHA from that response, then fetch its review comments
+   and CI rollup:
+   ```bash
+   N="${PR_NUMBER:?set PR_NUMBER to the numeric pull-request number}"
+   HEAD_SHA="${PR_HEAD_SHA:?set PR_HEAD_SHA to the current head SHA}"
+   gitea_api GET "repos/molecule-ai/molecule-core/issues/$N/comments" | python3 -m json.tool
+   gitea_api GET "repos/molecule-ai/molecule-core/pulls/$N/reviews" | python3 -m json.tool
+   gitea_api GET "repos/molecule-ai/molecule-core/commits/$HEAD_SHA/status" | python3 -m json.tool
    ```
    Merge ONLY if all four:
      - All required CI checks SUCCESS (`sop-tier-check / tier-check (pull_request)` and any sibling required check)
-     - `[core-qa-agent] APPROVED` comment present (or explicit `N/A — docs/lint only` waiver from a doc/lint-only PR)
-     - `[core-security-agent] APPROVED` comment present (or `N/A — non-security-touching` for non-auth/middleware/db PRs)
-     - `[core-uiux-agent] APPROVED` comment present if PR touches `canvas/**` or any UI surface (otherwise `N/A — backend-only`)
+     - `[core-qa-agent] APPROVED` comment present, or a lead-authored `[core-lead-agent] WAIVE-REVIEW: N/A — docs/lint only` for a doc/lint-only PR
+     - `[core-security-agent] APPROVED` comment present, or a lead-authored `[core-lead-agent] WAIVE-REVIEW: N/A — non-security-touching` for non-auth/middleware/db PRs
+     - `[core-uiux-agent] APPROVED` comment present if the PR touches `canvas/**` or any UI surface, or a lead-authored `[core-lead-agent] WAIVE-REVIEW: N/A — backend-only`
 
    When all four hold:
-   ```
-   tea pr merge <N> --repo molecule-ai/molecule-core --merge --delete-branch
+   ```bash
+   gitea_api POST "repos/molecule-ai/molecule-core/pulls/$N/merge" '{"do":"merge","delete_branch_after_merge":true}'
    ```
    When any fails, post `[core-lead-agent] BLOCKED on <missing>: requesting <core-qa-agent|core-security-agent|core-uiux-agent>` and move on. Do NOT silently force-merge — force-merge fires `incident.force_merge` to Loki and reports to the orchestrator (see `internal/runbooks/audit-force-merge.scripts`).
 
@@ -27,14 +32,14 @@ You are on a 5-minute orchestration pulse for the Core Platform team. Per `SHARE
 
 3. REVIEW OPEN PRs that DON'T have your `[core-lead-agent]` review yet:
    For PRs that already have core-qa-agent + core-security-agent + (core-uiux-agent if applicable) ✅, run code-review, post `[core-lead-agent] APPROVED — <one-sentence judgment>` or `[core-lead-agent] CHANGES REQUESTED: <reasons>`. Per §SOP-10, before approving check whether (author, core-lead) is your dominant pair on this repo over the last 20 PRs:
-   ```
+   ```bash
    bash /scripts/sop6-reviewer-concentration.sh  # if available, or skip if not
    ```
    If concentration ≥50%, prefer to ASK another lead (cp-lead, app-lead, etc.) to take this approval — comment `[core-lead-agent] DEFERRING REVIEW to <other-lead>: SOP-10 rotation` and message that lead.
 
 4. SCAN BACKLOG for unassigned issues:
-   ```
-   tea issue list --repo molecule-ai/molecule-core --state open --output simple
+   ```bash
+   gitea_api GET 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
    ```
    Match issue scope → role (per dispatch table below) and `delegate_task` to the right engineer (max 3 dispatches per pulse).
 
@@ -48,9 +53,15 @@ You are on a 5-minute orchestration pulse for the Core Platform team. Per `SHARE
    - Core-OffSec: Adversarial testing, prompt injection probes
 
 6. REPORT structured event (Loki picks this up; orchestrator monitors):
-   ```
-   logger -t core-lead "{\"event_type\":\"core-lead-pulse\",\"ts\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"merged\":<K>,\"approved\":<M>,\"blocked\":<X>,\"dispatched\":<N>,\"backlog_open\":<B>}"
-   commit_memory "core-pulse HH:MM - dispatched <N>, reviewed <M>, merged <K>, blocked <X>"
+   ```bash
+   MERGED_COUNT="${MERGED_COUNT:?set MERGED_COUNT from this pulse}"
+   APPROVED_COUNT="${APPROVED_COUNT:?set APPROVED_COUNT from this pulse}"
+   BLOCKED_COUNT="${BLOCKED_COUNT:?set BLOCKED_COUNT from this pulse}"
+   DISPATCHED_COUNT="${DISPATCHED_COUNT:?set DISPATCHED_COUNT from this pulse}"
+   BACKLOG_OPEN_COUNT="${BACKLOG_OPEN_COUNT:?set BACKLOG_OPEN_COUNT from the current query}"
+   EVENT_JSON=$(MERGED_COUNT="$MERGED_COUNT" APPROVED_COUNT="$APPROVED_COUNT" BLOCKED_COUNT="$BLOCKED_COUNT" DISPATCHED_COUNT="$DISPATCHED_COUNT" BACKLOG_OPEN_COUNT="$BACKLOG_OPEN_COUNT" python3 -c 'import datetime,json,os; print(json.dumps({"event_type":"core-lead-pulse","ts":datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),"merged":int(os.environ["MERGED_COUNT"]),"approved":int(os.environ["APPROVED_COUNT"]),"blocked":int(os.environ["BLOCKED_COUNT"]),"dispatched":int(os.environ["DISPATCHED_COUNT"]),"backlog_open":int(os.environ["BACKLOG_OPEN_COUNT"])}))')
+   logger -t core-lead "$EVENT_JSON"
+   commit_memory "core-pulse $(date -u +%H:%M) - dispatched $DISPATCHED_COUNT, reviewed $APPROVED_COUNT, merged $MERGED_COUNT, blocked $BLOCKED_COUNT"
    ```
 
 If the four-gate check or §SOP-10 rotation surfaced anything that needs attention beyond this pulse (e.g., a PR stuck for >3 cycles, a chronic missing-QA-approval pattern), file an issue with `[core-lead-agent]` tag — Discoveries Are Deliverables (Philosophy 2).

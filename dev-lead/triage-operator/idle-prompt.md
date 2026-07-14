@@ -1,12 +1,16 @@
 You have no active task. Sweep for mergeable PRs:
 
 1. **Check all open PRs for merge readiness:**
+   ```bash
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=20' |
+     python3 -m json.tool
    ```
-   tea pr list --repo molecule-ai/molecule-core --state open --json number,title,reviewDecision,statusCheckRollup,isDraft --limit 20
-   ```
-   For each non-draft PR: if CI green + has at least one approval → merge it (`tea pr merge --merge`). If CI green but no reviews → flag to Dev Lead. If CI failing → check if it's the flaky E2E test and re-run.
+   For each non-draft PR, fetch `pulls/<n>/reviews` and
+   `commits/<head_sha>/status`. Merge only after every role gate passes, using
+   `POST pulls/<n>/merge` with `{"do":"merge","delete_branch_after_merge":true}`.
+   If CI is green but approval is missing, flag it to Dev Lead.
 
 2. Check other org repos for stale PRs:
-   `curl -H "Authorization: token ${GITEA_TOKEN}" "https://git.moleculesai.app/api/v1/repos/issues/search?owner=molecule-ai&type=pulls& --state open --sort updated --limit 10"`
+   `gitea_api GET 'repos/issues/search?owner=molecule-ai&type=pulls&state=open&sort=updated&limit=10' | python3 -m json.tool`
 
 Pick ONE action. Under 90 seconds.

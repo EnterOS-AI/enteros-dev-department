@@ -1,141 +1,85 @@
 # molecule-ai/molecule-dev-department
 
-**Importable engineering-tree subtree** for Molecule AI org templates.
+Importable engineering subtree for Molecule AI organization templates.
 
-This repo is **not a standalone org template**. It is designed to be
-grafted into a parent template (e.g. `molecule-ai-org-template-molecule-dev`)
-via filesystem symlink at deploy time. The parent template owns the org
-identity, top-level workspaces (PM, Marketing, Research, …), and
-imports this repo's `dev-lead/` subtree as its engineering org.
+This repository is not a standalone organization template. A parent template
+loads one or more workspace roots from this repository with the platform's
+`!external` resolver. The parent owns the organization identity and any
+non-engineering workspaces; this repository owns the `dev-lead/` tree.
 
-## Why a separate repo
+## Why a separate repository
 
-`molecule-ai-org-template-molecule-dev` had grown to ~60 workspace
-folders + 11 `teams/*.yaml` composition files + 17 *orphaned* folders
-that no `!include` chain reached. The orphan accumulation was a sign
-the structure had outgrown a single repo.
+The engineering tree had grown large enough that keeping it in a parent
+template made reachability, ownership, and reuse harder to verify. Keeping it
+separate:
 
-Splitting the dev tree out:
+- makes the engineering department reusable by multiple parent templates;
+- gives the subtree its own review and release cadence;
+- lets CI reject orphaned workspaces and unsafe cross-tree traversal; and
+- keeps parent templates focused on organization-level composition.
 
-- Atomizes engineering as a self-contained unit that other org templates
-  can reuse (one link to add the whole department).
-- Makes orphan accumulation impossible — the validator (CI gate) walks
-  the manifest → roots → children and fails on any folder not reachable.
-- Lets the dev tree evolve on its own cadence without churning the
-  parent template.
-- Keeps the parent template's structure focused on org identity (PM,
-  Marketing, Research) and removes the ~50% of mass that's dev-specific.
+The extraction design and its history are recorded in
+[internal#77](https://git.moleculesai.app/molecule-ai/internal/issues/77).
 
-Full design rationale: [internal#77 RFC](https://git.moleculesai.app/molecule-ai/internal/issues/77)
+## Import contract
 
-## Subtree contract
+Parent templates import a workspace root directly from this repository. Pin an
+immutable tag or commit and bump it deliberately after validating the new tree:
 
-This repo is consumed by parent templates via this convention:
-
-1. **Operator-side deploy layout** clones both repos as siblings under
-   `/org-templates/`:
-
-   ```
-   /org-templates/
-     molecule-ai-org-template-molecule-dev/   ← parent template
-     molecule-dev-department/                 ← THIS repo
-   ```
-
-2. **Parent template** has a relative directory symlink at its root
-   (or under `teams/`):
-
-   ```
-   parent-template/
-     org.yaml
-     dev → ../molecule-dev-department/        ← symlink
-   ```
-
-3. **Parent's `org.yaml`** imports the subtree:
-
-   ```yaml
-   workspaces:
-     - !include teams/pm.yaml
-     - !include teams/marketing.yaml
-     - !include dev/dev-lead/workspace.yaml   ← into the symlinked subtree
-   ```
-
-4. **Workspace `files_dir:` paths inside this repo** use the symlink
-   prefix (`dev/<workspace-name>`) so they resolve correctly when the
-   subtree is imported via the parent. This means the subtree is **not
-   directly importable as a standalone org template** — by design.
-
-The platform's org importer (`workspace-server/internal/handlers/org_include.go`)
-follows symlinks at the OS layer (`os.ReadFile` is symlink-aware) while
-its security check (`filepath.Abs` / `filepath.Rel`) operates on path
-strings (passes for symlinked paths because the link's path is inside
-the parent root). The contract is pinned by tests in
-[molecule-core PR #102](https://git.moleculesai.app/molecule-ai/molecule-core/pulls/102).
-
-## Repo layout
-
+```yaml
+workspaces:
+  - !external
+    repo: molecule-ai/molecule-dev-department
+    ref: v1.0.0
+    path: dev-lead/workspace.yaml
 ```
+
+The platform fetches the named repository and resolves `path` inside that
+checkout. Parent-template defaults still apply to the imported workspaces; the
+workspace files and their relative `children:` paths remain owned here. No
+operator-side sibling clone or filesystem link is part of the contract.
+
+## Repository layout
+
+```text
 .
-├── dev-department.yaml         ← manifest: defaults + category_routing + roots
-├── .molecule-ci/scripts/
-│   └── validate-tree.py        ← orphan / reachability lint (CI gate)
-├── .github/workflows/
-│   └── validate.yml            ← runs validate-tree.py on every PR
-├── README.md                   ← this file
-├── LICENSE                     ← MIT
-└── <workspace-folders>         ← scaffolded empty; populated by Phase 3c-2
+├── dev-department.yaml
+├── dev-lead/
+│   └── workspace.yaml
+├── .gitea/workflows/
+│   └── validate.yml
+└── .molecule-ci/scripts/
+    ├── validate-tree.py
+    ├── validate-current-ops.py
+    └── check-secrets.py
 ```
 
-After Phase 3c-2 (extract dev tree with git history) the repo will
-contain the dev-lead/ workspace tree with nested sub-teams. After
-Phase 3c-3 (move documentation-specialist + triage-operator into the
-tree per Hongming Q1+Q2) those workspaces will live under
-`dev-lead/app-docs/documentation-specialist/` and `dev-lead/triage-operator/`
-respectively.
+`dev-department.yaml` documents defaults and points to the same Dev Lead root
+for local tree validation. Parent templates normally import
+`dev-lead/workspace.yaml` through `!external`.
 
-## Validating locally
+## Validate locally
+
+Run the same gates as `.gitea/workflows/validate.yml`:
 
 ```bash
-.molecule-ci/scripts/validate-tree.py
-# OK — tree is clean
-
-# Or with explicit manifest:
-.molecule-ci/scripts/validate-tree.py dev-department.yaml
+python3 -m unittest discover -s .molecule-ci/tests -p 'test_*.py'
+python3 .molecule-ci/scripts/validate-tree.py --strict
+python3 .molecule-ci/scripts/validate-current-ops.py
+python3 .molecule-ci/scripts/check-secrets.py
 ```
 
-The validator:
+The tree validator walks `dev-department.yaml -> roots -> children`, including
+`!include` directives, and rejects orphan workspaces, duplicate parent claims,
+missing workspace files, and unsafe `..` traversal. The operations-contract
+validator rejects retired branch, repository, secrets, deployment, and channel
+instructions. The secrets scan checks committed files for credential material.
 
-- Walks `dev-department.yaml → roots → children` recursively, including
-  through `!include` directives.
-- Lists every directory containing `workspace.yaml`.
-- Reports orphans (filesystem dirs not reachable from manifest),
-  cross-tree `..` traversal in `children:` paths, duplicate parents,
-  and missing `workspace.yaml`.
-- Exits non-zero on any violation.
+## References
 
-CI runs the same script via `.github/workflows/validate.yml` on every
-push and PR — orphan accumulation is caught at PR time, not at deploy
-time.
-
-## Phase status
-
-| Phase | Status | Where |
-|---|---|---|
-| 1 — Investigate platform org importer | ✓ done | internal#77 comment 1886 |
-| 2 — Design (SSOT, alternatives, security, versioning) | ✓ done | internal#77 |
-| 3a — Platform `external:` ref support | parked (deferred) | task #222 |
-| 3b — Validator + CI gate | ✓ done | this commit |
-| 3c-1 — Scaffold this repo | ✓ done | this commit |
-| 3c-2 — Extract dev tree with history | pending | task #224 |
-| 3c-3 — Atomize structure + move doc-spec + triage-op | pending | task #224 |
-| 3d — Slim parent template + wire symlink + delete orphans | pending | task #225 |
-| 4 — End-to-end verify on staging | pending | task #226 |
-
-## Refs
-
-- [internal#77](https://git.moleculesai.app/molecule-ai/internal/issues/77) — extraction RFC
-- [molecule-core#102](https://git.moleculesai.app/molecule-ai/molecule-core/pulls/102) — symlink-resolution test
-- Hongming GO 2026-05-08 ("you own this feature and repos, start")
+- [internal#77](https://git.moleculesai.app/molecule-ai/internal/issues/77) — extraction RFC and decision history
+- [molecule-core#102](https://git.moleculesai.app/molecule-ai/molecule-core/pulls/102) — historical filesystem-resolution test from the earlier design
 
 ## License
 
-MIT — see [LICENSE](./LICENSE)
+MIT — see [LICENSE](./LICENSE).

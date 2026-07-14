@@ -1,42 +1,50 @@
-IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues, runbooks before starting work.
+IMPORTANT: Check molecule-ai/internal for the roadmap, known issues, and runbooks before starting work.
 
-Daily audit of `org-templates/molecule-dev/`. Catches drift, stale prompts,
-missing schedules, and gaps that block the team-runs-24/7 goal. Symptom
-of prior incident (issue #85): cron scheduler died silently for 10+ hours
-and nobody noticed because no one was watching template fitness.
+Audit the current `molecule-ai/molecule-dev-department` template source. Catch
+stale prompts, invalid imports, missing schedules, and unsupported config before
+a parent template bumps its pinned `!external` reference.
 
-1. CHECK SCHEDULES ARE FIRING:
-   For every workspace_schedule in the platform DB:
-   curl -s http://host.docker.internal:8080/workspaces/<id>/schedules
-   Compare last_run_at to now() vs cron interval. Anything more than 2x
-   the interval behind = STALE. File issue against platform.
+1. CHECK SCHEDULE EXECUTION:
+   Use the authorized platform/admin interface and current domain endpoints to
+   inspect each imported workspace schedule's last terminal run. Compare the
+   observed timestamp with its cron interval. More than two intervals behind is
+   stale; file an evidence-backed issue against the owning repository. Do not
+   assume a local container or direct database surface represents production.
 
-2. CHECK SYSTEM PROMPTS ARE FRESH:
-   cd /workspace/repo
-   for f in org-templates/molecule-dev/*/system-prompt.md; do
-     echo "$(git log -1 --format='%ar' -- "$f") $f"
+2. CHECK TEMPLATE SOURCE:
+   TEMPLATE_URL=https://git.moleculesai.app/molecule-ai/molecule-dev-department.git
+   if [ -d /workspace/dev-department/.git ]; then
+     git -C /workspace/dev-department remote set-url origin "$TEMPLATE_URL"
+     gitea_git -C /workspace/dev-department pull --ff-only
+   else
+     gitea_git clone "$TEMPLATE_URL" /workspace/dev-department
+   fi
+   cd /workspace/dev-department
+   python3 .molecule-ci/scripts/validate-tree.py --strict
+   python3 .molecule-ci/scripts/validate-current-ops.py
+   python3 .molecule-ci/scripts/check-secrets.py
+
+3. CHECK SYSTEM PROMPTS AGAINST CURRENT REPOS:
+   find dev-lead -name system-prompt.md -print0 | while IFS= read -r -d '' file; do
+     printf '%s %s\n' "$(git log -1 --format='%ar' -- "$file")" "$file"
    done
-   Anything not touched in 30+ days might be stale relative to recent
-   platform changes. Spot-check vs CLAUDE.md and recent merges.
+   Age alone is not a defect. Spot-check operational claims against the live
+   Gitea repository, checked-in workflows, current domains, and current source
+   paths; file exact mismatches.
 
-3. CHECK ROLES HAVE PLUGINS THEY NEED:
-   yq '.workspaces[] | (.name, .plugins)' org-templates/molecule-dev/org.yaml
-   (or python+yaml). Roles inherit defaults; flag any role that should
-   plausibly have role-specific extras (compare role description vs
-   plugins list).
+4. CHECK ROLE-SPECIFIC PLUGINS AND SCHEDULES:
+   Inspect each `workspace.yaml` together with `dev-department.yaml` defaults.
+   Verify schedule `prompt_file` paths exist and role-specific plugins match the
+   responsibility described by that workspace. Do not invent a missing plugin
+   solely from a role name.
 
-4. CHECK CRONS COVER THE EVOLUTION LEVERS:
-   The team must keep evolving plugins, template, channels, watchlist.
-   Verify schedules exist for: ecosystem-watch (Research Lead),
-   plugin-curation (Technical Researcher), template-fitness (you,
-   this cron), channel-expansion (DevOps).
-   Any missing? File issue.
+5. CHECK CHANNEL SHAPE:
+   Each channel may use only `type`, `config`, `allowed_users`, and `enabled`.
+   Confirm `${VAR}` references live under `config` and that the corresponding
+   exact values are bound from Infisical. Category routing belongs in the
+   organization/defaults config, not on channel entries.
 
-5. CHECK CHANNELS:
-   Today only PM has telegram. Should any other role have a channel?
-   (Security Auditor → email on critical findings; DevOps → Slack on
-    build breaks; etc.) File issue if a channel gap is meaningful.
-
-6. ROUTING: delegate_task to PM with audit_summary metadata
-   (category=template, severity=…, issues=[…], top_recommendation=…).
-7. If everything is fit and current, PM-message one-line "clean".
+6. ROUTING:
+   Delegate an evidence-backed summary to PM with audit_summary metadata
+   (`category=template`, severity, issues, and top_recommendation). If clean,
+   send one concise clean result with the validated commit SHA.

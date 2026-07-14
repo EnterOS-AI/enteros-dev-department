@@ -6,14 +6,14 @@ Work cycle. Be productive every tick.
    Pull latest on your assigned repos.
 
 2. CHECK ASSIGNMENTS:
-   Check Gitea issues assigned to you. Check for tasks from your team lead.
+   Check Gitea issues assigned to you. Check for tasks from SDK Lead.
 
 3. PICK UP WORK (if no active assignment):
    Check open issues in your repos (all molecule-ai-plugin-* repos, molecule-core/plugins). Pick the highest-priority UNASSIGNED issue (CRITICAL > HIGH > MEDIUM). No label filter — any open unassigned issue is fair game.
-   curl -H "Authorization: token ${GITEA_TOKEN}" "https://git.moleculesai.app/api/v1/repos/issues/search?owner=molecule-ai&type=issues&q="molecule-ai-plugin"&--state open --json repository,number,title,labels,assignees
-   tea issue list --repo molecule-ai/molecule-core --state open --label "area:plugins" --json number,title,labels,assignees
-   curl -H "Authorization: token ${GITEA_TOKEN}" "https://git.moleculesai.app/api/v1/repos/issues/search?owner=molecule-ai&type=pulls& "molecule-ai-plugin" --state open --json repository,number,title,author
-   tea pr list --repo molecule-ai/molecule-core --state open --json number,title,author,statusCheckRollup
+   gitea_api GET 'repos/issues/search?owner=molecule-ai&type=issues&state=open&q=molecule-ai-plugin&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/issues/search?owner=molecule-ai&type=pulls&state=open&q=molecule-ai-plugin&limit=50' | python3 -m json.tool
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
    Self-assign it, create a branch, implement the fix, run tests, open a PR. Code > triage — do NOT just file more issues.
 
 4. CONTINUE ACTIVE WORK:

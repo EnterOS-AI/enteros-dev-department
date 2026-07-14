@@ -9,7 +9,7 @@ Expected wall-clock: **5–15 minutes** per tick when the backlog is small; up t
 ## Step 0 — Guard activation + learnings replay
 
 1. Invoke the `careful-mode` skill → loads REFUSE / WARN / ALLOW lists into your working context.
-2. Read the last 20 lines of `~/.claude/projects/-Users-hongming-Documents-GitHub-molecule-monorepo/memory/cron-learnings.jsonl`. This tells you:
+2. Read the last 20 lines of `~/.claude/projects/*/memory/cron-learnings.jsonl`. This tells you:
    - What the previous tick did
    - What the previous tick's `next_action` is expecting from you or from the CEO
    - Any open scope calls
@@ -21,14 +21,11 @@ Never skip Step 0. The cron-learnings file is your primary "what did past-me alr
 ## Step 1 — List state
 
 ```bash
-tea pr list --repo molecule-ai/molecule-monorepo --state open \
-  --json number,title,author,isDraft,mergeable,statusCheckRollup,files
+gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
 
-tea pr list --repo molecule-ai/molecule-controlplane --state open \
-  --json number,title,author,isDraft,mergeable
+gitea_api GET 'repos/molecule-ai/molecule-controlplane/pulls?state=open&limit=50' | python3 -m json.tool
 
-tea issue list --repo molecule-ai/molecule-monorepo --state open \
-  --json number,title,assignees,labels
+gitea_api GET 'repos/molecule-ai/molecule-core/issues?state=open&type=issues&limit=50' | python3 -m json.tool
 ```
 
 For each new PR and issue (compared to the previous tick's cron-learning), decide: PR-gate flow (Step 2) or issue-triage flow (Step 4).
@@ -41,14 +38,14 @@ For each open PR:
 
 ### Gate 1 — CI
 
-`tea pr checks <N>`. All green? Proceed. Any fail or cancel? Investigate.
+Read the PR's head SHA from `gitea_api GET "repos/molecule-ai/$REPO/pulls/$N"`, then inspect `repos/molecule-ai/$REPO/commits/$SHA/status` and the matching Actions run. All required checks green and the run terminal? Proceed. Any failure or cancellation? Investigate.
 
-- **Cancelled** = superseded by a newer push; rerun via `tea action rerun` if needed.
-- **Failed** = read the log (`tea action view <runId> --log-failed`). If the failure is mechanical (lint, import order, flaky fixture), go to Step 2a. If it caught a real bug, go to Step 2d.
+- **Cancelled** = often superseded by a newer push; identify the replacement run first. If a rerun is still needed, use the Actions rerun endpoint with an Actions-write-scoped token.
+- **Failed** = read the log through the Gitea Actions UI or API. If the failure is mechanical (lint, import order, flaky fixture), go to Step 2a. If it caught a real bug, go to Step 2d.
 
 ### Gate 2 — Build
 
-Usually covered by Gate 1 CI, but confirm the build step specifically passed. On controlplane, that's the `build` job. On monorepo, that's `Platform (Go)` + `Canvas (Next.js)` + `MCP Server (Node.js)`.
+Usually covered by Gate 1 CI, but confirm the build step specifically passed. Read the current checked-in workflow and job names for each repository; do not rely on historical job labels.
 
 ### Gate 3 — Tests
 
@@ -78,14 +75,10 @@ If the PR touches `canvas/src/**/*.tsx`, run `cd canvas && npm test` locally (or
 
 If the fix is truly mechanical:
 
-```bash
-tea pr checkout <N>
-# make the fix
-git add <files>
-git commit -m "fix(gate-N): <what you fixed>"
-git push
-tea action watch
-```
+Fetch the PR's advertised head ref into a dedicated local branch, make only the
+mechanical fix, commit it as `fix(gate-N): <what you fixed>`, and push to the
+same PR branch with the normal credential helper. Follow the new head's Actions
+run to a terminal conclusion through the REST API.
 
 Wait for CI. If green, proceed to Step 2b. If still red, you misdiagnosed — back out your change, leave a comment explaining what's wrong, let the author fix it.
 
@@ -94,7 +87,8 @@ Wait for CI. If green, proceed to Step 2b. If still red, you misdiagnosed — ba
 All 7 gates pass + 0 🔴 from code-review + (for noteworthy PRs) cross-vendor-review agreement + (if auth/billing/schema/data-deletion) explicit CEO approval in the chat:
 
 ```bash
-tea pr merge <N> --merge --delete-branch
+gitea_api POST "repos/molecule-ai/$REPO/pulls/$N/merge" \
+  '{"do":"merge","delete_branch_after_merge":true}'
 ```
 
 Never `--squash`, never `--rebase`, never `--admin` bypassing checks.
@@ -163,14 +157,11 @@ Plugin needs to exist before you can wire it. Migration needs to exist before yo
 
 If all 6 pass:
 
-```bash
-tea issue edit <N> --add-assignee @me
-git checkout -b fix/issue-<N>-<short-slug>
-# implement + test
-git commit -m "fix: <what>\n\nCloses #<N>"
-git push -u origin fix/issue-<N>-<short-slug>
-tea pr create --draft
-```
+Assign the issue to your persona through `PATCH
+repos/molecule-ai/$REPO/issues/$N`, create `fix/issue-<N>-<short-slug>`,
+implement and test, then push with the ephemeral Git helper. Create the draft
+through `POST repos/molecule-ai/$REPO/pulls`; generate its JSON body with
+Python so branch names and text are escaped correctly.
 
 Then run `llm-judge` skill against the issue body + PR diff. Score ≥ 4 → mark ready for review. Score ≤ 2 → stay draft, leave a note for yourself in the PR body.
 
@@ -180,7 +171,7 @@ Then run `llm-judge` skill against the issue body + PR diff. Score ≥ 4 → mar
 
 Close the tick with a report (posted in chat if user-visible, logged if not). Format:
 
-```
+```text
 - Merged: #A, #B                            (use "none" if empty)
 - Fixed + merged: #C (gate-N fix)
 - Fixed + awaiting CI: #D
@@ -201,7 +192,7 @@ Then append ONE LINE to `cron-learnings.jsonl`:
 
 And ONE LINE to `.claude/per-tick-reflections.md`:
 
-```
+```text
 <ISO-8601> — <what surprised me | what I'd do differently next tick>
 ```
 

@@ -3,7 +3,7 @@ IMPORTANT: Check molecule-ai/internal repo for roadmap (PLAN.md), known issues (
 QA review cycle. Be thorough and incremental.
 
 1. Pull latest on your assigned repos:
-   cd /workspace/repos/molecule-core && git pull origin staging
+   cd /workspace/repos/molecule-core && gitea_git pull --ff-only origin main
 
 2. Check what you audited last time: use search_memory("qa audit").
 
@@ -18,7 +18,7 @@ QA review cycle. Be thorough and incremental.
    cd /workspace/repos/molecule-core/canvas && npm test 2>&1 | tail -20
 
 6. Run Python workspace tests:
-   cd /workspace/repos/molecule-core/workspace && python -m pytest 2>&1 | tail -20
+   cd /workspace/repos/molecule-core/workspace && python3 -m pytest 2>&1 | tail -20
 
 7. Check test coverage on recently changed files:
    For Go: cd /workspace/repos/molecule-core/workspace-server && go test -coverprofile=cover.out ./... 2>&1 | grep -E "^ok|FAIL"
@@ -26,7 +26,7 @@ QA review cycle. Be thorough and incremental.
    Flag any changed file with <70% coverage.
 
 8. Review recent PRs for quality issues and test gaps:
-   tea pr list --repo molecule-ai/molecule-core --state merged --search "merged:>$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:%SZ)" --json number,title,files --limit 10
+   gitea_api GET 'repos/molecule-ai/molecule-core/pulls?state=open&limit=50' | python3 -m json.tool
    For each PR: does it add/change code without adding/updating tests? Flag it.
 
 9. Check for regressions (run builds, look for errors):
@@ -37,6 +37,6 @@ QA review cycle. Be thorough and incremental.
 
 DELIVERABLE ROUTING (MANDATORY every cycle):
 a. For each failing test or coverage regression: FILE A GITEA ISSUE.
-b. delegate_task to your team lead with a summary.
+b. delegate_task to Core Platform Lead with a summary.
 c. If all clean: delegate_task with "qa clean on SHA <X>".
 d. Save to memory key "qa-audit-latest" as secondary record.

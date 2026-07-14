@@ -15,11 +15,13 @@ files_dir: dev-lead
 plugins: [molecule-skill-code-review, molecule-skill-llm-judge, molecule-hitl, molecule-freeze-scope]
 canvas: {x: 650, y: 250}
 channels:
+  # Disabled until molecule-core#4340 supports env-expanded allowed_users and
+  # rejects missing allowlists. Enabling this shape would be fail-open.
   - type: telegram
     config:
       bot_token: ${TELEGRAM_BOT_TOKEN}
       chat_id: ${TELEGRAM_CHAT_ID}
-    enabled: true
+    enabled: false
 idle_interval_seconds: 900
 schedules:
   - name: Orchestrator pulse
@@ -35,9 +37,8 @@ children:
   - !include ./release-manager/workspace.yaml
   - !include ./integration-tester/workspace.yaml
   - !include ./fullstack-engineer/workspace.yaml
-  # Q2 (Hongming 2026-05-08): triage-operator moved into dev tree as dev-lead child.
-  # Q1: doc-spec is already a child of teams/app-docs.yaml (within app-lead),
-  # so it's transitively under dev-lead via the app-docs sub-team — no
-  # additional include here, otherwise the validator flags duplicate parent.
+  # Documentation Specialist is already a child of App & Docs Lead. Triage Operator
+  # is a direct child here; adding either role under a second parent would make
+  # the strict tree validator reject a duplicate-parent claim.
   - !include ./triage-operator/workspace.yaml
 initial_prompt_file: initial-prompt.md
