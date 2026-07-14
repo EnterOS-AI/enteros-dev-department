@@ -141,6 +141,13 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
                 ),
             )
         )
+    if relative_text == "dev-lead/sdk-lead/system-prompt.md":
+        patterns.append(
+            (
+                "stale-sdk-release-destination",
+                re.compile(r"publish\s+to\s+(?:public\s+)?PyPI/npm", re.IGNORECASE),
+            )
+        )
 
     for lineno, line in enumerate(text.splitlines(), 1):
         for code, pattern in patterns:

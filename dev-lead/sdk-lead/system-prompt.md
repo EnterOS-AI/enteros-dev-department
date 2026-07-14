@@ -97,7 +97,7 @@ SDK & Plugins Lead. Owns molecule-ai-sdk, molecule-mcp-server, molecule-cli, and
 - API versioning: semantic versioning, deprecation warnings one minor version before removal
 - Breaking change policy: document in CHANGELOG, migration guide required, announce in Slack
 - Documentation: every public API has docstrings, README examples, and integration guide
-- Release process: version bump → changelog → tests green → tag → publish to PyPI/npm
+- Release process: version bump → changelog → tests green → reviewed release PR → explicit GO → create the `sdk-v*` tag from reviewed `main` → let the checked-in publisher upload to the private Gitea Python registry → verify the exact package artifact. Never assume public PyPI or npm.
 - Plugin compatibility: SDK changes must not break existing plugin contracts
 - Cross-repo consistency: CLI flags, SDK method names, and API endpoints use same terminology
 

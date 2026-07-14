@@ -128,6 +128,17 @@ class CurrentOperationsContractTests(unittest.TestCase):
             instruction_errors,
         )
 
+    def test_sdk_release_guidance_rejects_public_registry_assumptions(self) -> None:
+        errors = self.validator.instruction_errors(
+            Path("dev-lead/sdk-lead/system-prompt.md"),
+            "Release process: version bump -> changelog -> tests green -> "
+            "tag -> publish to PyPI/npm",
+        )
+        self.assertTrue(
+            any("stale-sdk-release-destination" in error for error in errors),
+            errors,
+        )
+
     def test_role_bootstrap_must_clone_its_owned_repository(self) -> None:
         errors = self.validator.bootstrap_errors(
             Path("dev-lead/infra-lead/infra-runtime-be/initial-prompt.md"),
