@@ -141,6 +141,19 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
                 ),
             )
         )
+    if relative_text == "dev-lead/sdk-lead/system-prompt.md":
+        patterns.append(
+            (
+                "stale-sdk-release-destination",
+                re.compile(r"publish\s+to\s+(?:public\s+)?PyPI/npm", re.IGNORECASE),
+            )
+        )
+        patterns.append(
+            (
+                "stale-sdk-release-version-bump",
+                re.compile(r"Release process:\s*version bump", re.IGNORECASE),
+            )
+        )
 
     for lineno, line in enumerate(text.splitlines(), 1):
         for code, pattern in patterns:
@@ -157,6 +170,31 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
                     f"{relative_text}:{lineno}: "
                     f"[incomplete-security-approval-gate] missing APPROVED for {missing}"
                 )
+    if relative_text == "dev-lead/sdk-lead/system-prompt.md":
+        release_lines = [
+            line.strip()
+            for line in text.splitlines()
+            if line.strip().startswith("- Release process:")
+        ]
+        required = (
+            "choose and document the release version and notes",
+            "reviewed `main`",
+            "explicit GO",
+            "`sdk-v*` tag",
+            "release version source of truth",
+            "no committed release-only version bump",
+            "private Gitea Python registry",
+            "wheel and sdist",
+            "verify the exact artifacts",
+        )
+        release_line = release_lines[0] if len(release_lines) == 1 else ""
+        missing = [needle for needle in required if needle not in release_line]
+        if len(release_lines) != 1:
+            missing.append("exactly one release-process line")
+        if missing:
+            errors.append(
+                f"{relative_text}: [missing-sdk-release-contract] missing {missing}"
+            )
     return errors
 
 
