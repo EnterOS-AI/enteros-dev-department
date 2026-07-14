@@ -14,9 +14,9 @@ a parent template bumps its pinned `!external` reference.
 2. CHECK TEMPLATE SOURCE:
    tea repo clone molecule-ai/molecule-dev-department /workspace/dev-department 2>/dev/null || (cd /workspace/dev-department && git pull --ff-only)
    cd /workspace/dev-department
-   python .molecule-ci/scripts/validate-tree.py --strict
-   python .molecule-ci/scripts/validate-current-ops.py
-   python .molecule-ci/scripts/check-secrets.py
+   python3 .molecule-ci/scripts/validate-tree.py --strict
+   python3 .molecule-ci/scripts/validate-current-ops.py
+   python3 .molecule-ci/scripts/check-secrets.py
 
 3. CHECK SYSTEM PROMPTS AGAINST CURRENT REPOS:
    find dev-lead -name system-prompt.md -print0 | while IFS= read -r -d '' file; do

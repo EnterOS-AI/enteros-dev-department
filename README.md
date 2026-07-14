@@ -63,9 +63,9 @@ for local tree validation. Parent templates normally import
 Run the same gates as `.gitea/workflows/validate.yml`:
 
 ```bash
-python .molecule-ci/scripts/validate-tree.py --strict
-python .molecule-ci/scripts/validate-current-ops.py
-python .molecule-ci/scripts/check-secrets.py
+python3 .molecule-ci/scripts/validate-tree.py --strict
+python3 .molecule-ci/scripts/validate-current-ops.py
+python3 .molecule-ci/scripts/check-secrets.py
 ```
 
 The tree validator walks `dev-department.yaml -> roots -> children`, including

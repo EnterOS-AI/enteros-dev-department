@@ -127,9 +127,13 @@ def main() -> int:
             ".github/workflows/",
             "scaffolded empty",
             "Phase 3c-2",
+            "python .molecule-ci/",
         ],
     )
-    _require("README.md", ["!external", ".gitea/workflows/validate.yml"])
+    _require(
+        "README.md",
+        ["!external", ".gitea/workflows/validate.yml", "python3 .molecule-ci/"],
+    )
 
     _forbid("dev-department.yaml", ["gitops-style symlink", "Phase 3c-"])
     _require("dev-department.yaml", ["!external"])
@@ -181,6 +185,7 @@ def main() -> int:
         "dev-lead/schedules/hourly-template-fitness-audit.md": [
             "org-templates/molecule-dev",
             "host.docker.internal",
+            "python .molecule-ci/",
         ],
         "dev-lead/triage-operator/initial-prompt.md": ["org-templates/molecule-dev"],
         "dev-lead/triage-operator/workspace.yaml": ["org-templates/molecule-dev"],
@@ -224,7 +229,10 @@ def main() -> int:
     )
     _require(
         "dev-lead/schedules/hourly-template-fitness-audit.md",
-        ["molecule-ai/molecule-dev-department", "validate-current-ops.py"],
+        [
+            "molecule-ai/molecule-dev-department",
+            "python3 .molecule-ci/scripts/validate-current-ops.py",
+        ],
     )
 
     _forbid(
