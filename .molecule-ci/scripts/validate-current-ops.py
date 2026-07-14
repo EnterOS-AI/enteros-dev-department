@@ -171,18 +171,26 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
                     f"[incomplete-security-approval-gate] missing APPROVED for {missing}"
                 )
     if relative_text == "dev-lead/sdk-lead/system-prompt.md":
+        release_lines = [
+            line.strip()
+            for line in text.splitlines()
+            if line.strip().startswith("- Release process:")
+        ]
         required = (
-            "choose and document the version",
+            "choose and document the release version and notes",
             "reviewed `main`",
             "explicit GO",
             "`sdk-v*` tag",
-            "source of truth",
+            "release version source of truth",
             "no committed release-only version bump",
             "private Gitea Python registry",
             "wheel and sdist",
             "verify the exact artifacts",
         )
-        missing = [needle for needle in required if needle not in text]
+        release_line = release_lines[0] if len(release_lines) == 1 else ""
+        missing = [needle for needle in required if needle not in release_line]
+        if len(release_lines) != 1:
+            missing.append("exactly one release-process line")
         if missing:
             errors.append(
                 f"{relative_text}: [missing-sdk-release-contract] missing {missing}"

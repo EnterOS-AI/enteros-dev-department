@@ -139,6 +139,17 @@ class CurrentOperationsContractTests(unittest.TestCase):
         self.assertIn("stale-sdk-release-version-bump", joined)
         self.assertIn("missing-sdk-release-contract", joined)
 
+    def test_sdk_release_markers_must_appear_on_the_release_process_line(self) -> None:
+        text = """Infisical is the source of truth for secrets.
+- Release process: choose and document the version -> reviewed `main` -> explicit GO -> create the `sdk-v*` tag (no committed release-only version bump) -> upload the wheel and sdist to the private Gitea Python registry -> verify the exact artifacts.
+"""
+        errors = self.validator.instruction_errors(
+            Path("dev-lead/sdk-lead/system-prompt.md"), text
+        )
+        joined = "\n".join(errors)
+        self.assertIn("missing-sdk-release-contract", joined)
+        self.assertIn("release version source of truth", joined)
+
     def test_role_bootstrap_must_clone_its_owned_repository(self) -> None:
         errors = self.validator.bootstrap_errors(
             Path("dev-lead/infra-lead/infra-runtime-be/initial-prompt.md"),
