@@ -8,14 +8,6 @@ model: MiniMax-M2.7
 parent: core-lead
 files_dir: dev-lead/core-lead/core-devops
 plugins: [molecule-hitl, molecule-skill-code-review, molecule-freeze-scope]
-channels:
-  # Disabled until molecule-core#4340 supports env-expanded allowed_users and
-  # rejects missing allowlists. Enabling this shape would be fail-open.
-  - type: telegram
-    config:
-      bot_token: ${TELEGRAM_BOT_TOKEN}
-      chat_id: ${TELEGRAM_CHAT_ID}
-    enabled: false
 idle_interval_seconds: 900
 schedules:
   - name: Pick up work (every 15 min)
