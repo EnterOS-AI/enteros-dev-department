@@ -57,6 +57,16 @@ class CurrentOperationsContractTests(unittest.TestCase):
             ("dev-lead/cp-lead/cp-qa/schedules/qa-review.md", "npm test -- --coverage", "stale-cp-stack"),
             ("dev-lead/integration-tester/schedules/e2e-test.md", "curl -sf http://localhost:8080/health", "stale-local-endpoint"),
             ("dev-lead/app-lead/app-fe/system-prompt.md", "Nextra/MDX docs site", "stale-docs-stack"),
+            (
+                "dev-lead/integration-tester/schedules/e2e-test.md",
+                "POST /channels/:id/test",
+                "retired-native-channel-api",
+            ),
+            (
+                "dev-lead/app-lead/documentation-specialist/schedules/cross-repo-docs-watch-every-2h.md",
+                "workspace-server/internal/channels/",
+                "retired-core-channel-package",
+            ),
         ]
         for relative, text, code in cases:
             with self.subTest(relative=relative):

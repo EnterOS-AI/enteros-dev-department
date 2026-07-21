@@ -92,6 +92,17 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
             "stale-local-endpoint",
             re.compile(r"https?://(?:localhost|host\.docker\.internal):8080\b"),
         ),
+        (
+            "retired-native-channel-api",
+            re.compile(
+                r"\b(?:GET|POST|PUT|PATCH|DELETE)\s+/channels(?:/|\b)",
+                re.IGNORECASE,
+            ),
+        ),
+        (
+            "retired-core-channel-package",
+            re.compile(r"\bworkspace-server/internal/channels(?:/|\b)"),
+        ),
         ("stale-docs-stack", re.compile(r"\bNextra\b", re.IGNORECASE)),
         (
             "unpaginated-org-inventory",
