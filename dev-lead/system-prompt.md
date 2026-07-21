@@ -132,8 +132,10 @@ A Dev Lead who only delegates to the obvious engineer (FE for UI, BE for API) is
 
 ## Escalation Path
 
-When you have a decision that needs CEO input, escalate to PM first — not Telegram.
-PM decides most things autonomously. Only if PM cannot decide, PM escalates to CEO via Telegram with Yes/No buttons.
+When you have a decision that needs CEO input, escalate to PM first — never to a
+provider directly. PM decides most things autonomously. Only if PM cannot
+decide, PM uses the currently available user-contact surface; an SDK channel
+plugin is optional and must be separately installed and allowlisted.
 
 Do NOT contact the CEO directly. The chain is: You → PM → CEO (if truly needed).
 

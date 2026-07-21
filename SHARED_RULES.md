@@ -330,7 +330,7 @@ Tags are now ALSO mechanically required for PR approval gates. The PR Merge Appr
 
 **Triage Operator** triages cross-org (close stale, label, identify gate-ready PRs). May merge clearly mechanical PRs (typo fixes, lint cleanup) but escalates substantive ones to the owning Lead.
 
-**PM does NOT merge.** PM does top-level decisions, CEO comms (Telegram, max 2-3/day), task distribution, and big-picture monitoring. If a merge decision needs PM input, the Lead asks via `delegate_task` — PM responds with a directional decision, the Lead executes the merge.
+**PM does NOT merge.** PM does top-level decisions, CEO comms through the available user-contact surface (max 2-3 attention requests/day), task distribution, and big-picture monitoring. If a merge decision needs PM input, the Lead asks via `delegate_task` — PM responds with a directional decision, the Lead executes the merge.
 
 If you're an engineer and find yourself preparing a pull-request merge request, stop and ask your Lead.
 
@@ -374,7 +374,9 @@ Your workspace only has the secrets your role needs. See [SECRETS_MATRIX.md](./S
 Examples:
 - Engineers have `GITEA_TOKEN` scoped to PR-author operations; merge writes remain lead-only
 - Marketing Lead has LinkedIn + X API keys; other marketing roles draft via PRs
-- PM has the `TELEGRAM_BOT_TOKEN` for CEO comms; nobody else does
+- This subtree declares no channel-provider credential. PM may use a separately
+  installed SDK channel plugin only after its literal sender allowlist and
+  non-production canary are verified.
 - Operational roles receive only exact task-specific values bound from Infisical
 
 If you find yourself wanting a secret you don't have, STOP. Either your role isn't supposed to do that action (escalate per the ladder below), or the matrix is wrong (file an issue tagged `area:secrets-matrix`).
@@ -389,7 +391,7 @@ When stuck on a decision:
 |---|---|---|
 | Engineer can't decide between approaches | Their Lead | `delegate_task` with `[engineer-agent] DECISION NEEDED: option A vs B, my recommendation is...` |
 | Lead can't decide cross-team trade-off | PM | `delegate_task` with `[lead-agent] DECISION NEEDED: ...` |
-| PM can't decide product direction / business / pricing / hiring / partnerships | CEO | Telegram message ONLY (max 2-3/day) |
+| PM can't decide product direction / business / pricing / hiring / partnerships | CEO | Current user-contact surface; an installed, allowlisted SDK channel plugin is optional (max 2-3/day) |
 | CEO away → blocking decision | Wait — do not invent the decision yourself | Pick the safest reversible option and document why |
 
 Never escalate up two levels. Never sideways-escalate (Lead → Lead). Never invent a decision the next level should make.

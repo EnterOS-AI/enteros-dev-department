@@ -26,9 +26,15 @@ Cross-repo E2E test cycle. Run every 30 minutes.
    timestamp within the last 30 minutes through the tenant domain. The retired
    local `/admin/liveness` probe is not a current control-plane endpoint.
 
-5. CHANNEL TEST — verify Slack integration:
-   If Slack channel is configured: POST /channels/:id/test and verify 200 + message delivered.
-   If not configured: skip and note in report.
+5. CHANNEL PLUGIN TEST — verify the provider-owned staging bridge:
+   If a dedicated staging provider fixture, allowlisted sender, and destination
+   are provisioned, run the channel plugin repository's documented staging
+   canary/E2E. Verify authorized provider input reaches the workspace through
+   the authenticated runtime socket/A2A contract and that the correlated reply
+   returns through the plugin. The plugin owns provider authentication,
+   allowlists, delivery, and replay handling; Core does not expose a native
+   provider test endpoint. If the fixture is absent, skip and record the exact
+   missing prerequisite. Never substitute production credentials or destinations.
 
 6. CONTRACT TESTS: API schema compatibility, WebSocket protocol, A2A message format.
    Verify response shapes match expected schemas for key endpoints.

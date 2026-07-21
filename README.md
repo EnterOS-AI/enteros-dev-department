@@ -73,7 +73,9 @@ The tree validator walks `dev-department.yaml -> roots -> children`, including
 `!include` directives, and rejects orphan workspaces, duplicate parent claims,
 missing workspace files, and unsafe `..` traversal. The operations-contract
 validator rejects retired branch, repository, secrets, deployment, and channel
-instructions. The secrets scan checks committed files for credential material.
+instructions, including any reintroduction of the native `channels:` field.
+Channel providers are configured by separately installed SDK plugins. The
+secrets scan checks committed files for credential material.
 
 ## References
 

@@ -23,7 +23,7 @@ credential from Infisical rather than assuming one organization-wide provider.
 | **Controlplane** | Repository-scoped `GITEA_TOKEN`; control-plane admin credential only for an explicitly authorized operation | Control-plane code and approved API operations. |
 | **Documentation Specialist, Technical Writer** | `GITEA_TOKEN` scoped to documentation, landing, or assigned source repositories | Documentation branches and PRs only. |
 | **Release Manager** | `GITEA_TOKEN` plus task-specific package publishing credentials from Infisical | Versioning, release PRs, and approved publication workflows. |
-| **Channel-enabled roles** | Only the channel token and destination identifiers required by their declared channel | Send through that role's configured channel; no cross-role reuse. |
+| **Channel-enabled roles** | No provider credential is declared by this subtree; an SDK channel plugin receives only its own token and destination identifiers | Send only through a separately installed, explicitly allowlisted plugin; no cross-role reuse. |
 
 ## Provisioning rules
 
@@ -35,6 +35,8 @@ credential from Infisical rather than assuming one organization-wide provider.
    replace it with a broader shared token.
 5. Treat `.env.example` files as key-shape documentation only. They are not a
    request to create a local `.env` or paste real values into the repository.
+6. Keep channel-provider credentials out of org-template YAML and role
+   `.env.example` files; configure them through the plugin's secret surface.
 
 Least privilege limits prompt-injection blast radius and makes the credential
 used for an operation attributable to the responsible persona.

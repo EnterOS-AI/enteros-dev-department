@@ -53,16 +53,6 @@ plugins:
         # `prompt_file:` in the same list item — fragile for some YAML
         # parsers). Also added inline `prompt:` as a self-contained fallback
         # so the schedule survives a fresh import even if the file is missing.
-# The org importer expands ${VAR} references inside `config` but not inside
-# `allowed_users`. Keep this channel disabled until molecule-core#4340 lands;
-# enabling it without a literal allowlist would accept every sender.
-channels:
-  - type: telegram
-    config:
-      bot_token: ${TELEGRAM_BOT_TOKEN}
-      chat_id: ${TELEGRAM_CHAT_ID_TRIAGE_OPERATOR}
-    enabled: false
-
 schedules:
   - name: Hourly triage
     cron_expr: "17 * * * *"

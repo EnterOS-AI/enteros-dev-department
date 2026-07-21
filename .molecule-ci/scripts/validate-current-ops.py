@@ -14,7 +14,6 @@ import yaml
 
 DEFAULT_ROOT = Path(__file__).resolve().parents[2]
 IMPORT_RULES_MARKER = "## Critical operations contract (import-local)"
-ALLOWED_CHANNEL_KEYS = {"type", "config", "allowed_users", "enabled"}
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^]]+\]\(([^)]+)\)")
 XTRACE_SAFE_GIT_HELPER = re.compile(r"gitea_git\(\)\s*\(\s*\n\s*set \+x\b")
 BOOTSTRAP_REPOSITORIES = {
@@ -92,6 +91,17 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
         (
             "stale-local-endpoint",
             re.compile(r"https?://(?:localhost|host\.docker\.internal):8080\b"),
+        ),
+        (
+            "retired-native-channel-api",
+            re.compile(
+                r"\b(?:GET|POST|PUT|PATCH|DELETE)\s+/channels(?:/|\b)",
+                re.IGNORECASE,
+            ),
+        ),
+        (
+            "retired-core-channel-package",
+            re.compile(r"\bworkspace-server/internal/channels(?:/|\b)"),
         ),
         ("stale-docs-stack", re.compile(r"\bNextra\b", re.IGNORECASE)),
         (
@@ -310,44 +320,16 @@ def shared_rules_errors(text: str) -> list[str]:
 
 
 def channel_errors(relative: Path, document: Any) -> list[str]:
-    """Reject importer-invalid or fail-open native-channel declarations."""
+    """Reject the retired native channel field, including disabled entries."""
 
     if not isinstance(document, dict):
         return []
-    channels = document.get("channels", [])
-    if not isinstance(channels, list):
-        return [f"{relative}: [invalid-channels] channels must be a list"]
-
-    errors: list[str] = []
-    for index, channel in enumerate(channels):
-        label = f"{relative}:channels[{index}]"
-        if not isinstance(channel, dict):
-            errors.append(f"{label}: [invalid-channel] entry must be a mapping")
-            continue
-        unknown = sorted(set(channel) - ALLOWED_CHANNEL_KEYS)
-        if unknown:
-            errors.append(f"{label}: [invalid-channel-keys] importer ignores {unknown}")
-        if not isinstance(channel.get("config"), dict):
-            errors.append(f"{label}: [invalid-channel-config] config must be a mapping")
-
-        enabled = channel.get("enabled", True)
-        allowed_users = channel.get("allowed_users")
-        if enabled is not False:
-            if not isinstance(allowed_users, list) or not allowed_users:
-                errors.append(
-                    f"{label}: [fail-open-channel] enabled channel needs a non-empty "
-                    "literal allowed_users list; disable it until molecule-core#4340"
-                )
-            elif any(not isinstance(item, str) or not item.strip() for item in allowed_users):
-                errors.append(f"{label}: [invalid-allowlist] entries must be non-empty strings")
-        if isinstance(allowed_users, list) and any(
-            isinstance(item, str) and "${" in item for item in allowed_users
-        ):
-            errors.append(
-                f"{label}: [unexpanded-allowlist] allowed_users does not support env "
-                "expansion; see molecule-core#4340"
-            )
-    return errors
+    if "channels" not in document:
+        return []
+    return [
+        f"{relative}:channels: [retired-native-channels] configure an SDK channel "
+        "plugin outside the org template"
+    ]
 
 
 def routing_errors(routing: Any, workspace_names: set[str]) -> list[str]:

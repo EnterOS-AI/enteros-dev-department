@@ -48,7 +48,12 @@ For each merged PR, check `files`:
 - Touches a public API (`workspace-server/internal/handlers/`, `workspace-server/internal/router/`) → the matching page under `content/docs/api-reference/` likely needs an update.
 - Touches a standalone workspace or org template repository → docs site `org-template.mdx` or `concepts.mdx`.
 - Touches a plugin repo → docs site `plugins.mdx` (and the plugin repo's own README).
-- Touches a channel adapter (`workspace-server/internal/channels/`) → docs site `channels.mdx`.
+- Touches a `kind: channel` plugin or the SDK channel contract → docs site
+  `plugins/channel-plugins.mdx` and `channels.mdx`, plus the provider plugin's
+  own README. Provider behavior and verification belong to that plugin repo.
+- Reintroduces provider-specific channel code or native channel routes in Core →
+  treat it as a cutover regression and file a blocking Core issue; do not
+  document it as a supported integration.
 - Touches a schedule / cron / workflow → docs site `schedules.mdx`.
 - Touches `migrations/` → docs site `architecture.mdx` schema section + a callout in the daily changelog.
 - Touches CI (`*.yml` in `.gitea/workflows/`) → typically internal-only; skip unless it changes a publicly documented release or deployment flow.

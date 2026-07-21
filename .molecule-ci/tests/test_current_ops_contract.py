@@ -57,6 +57,16 @@ class CurrentOperationsContractTests(unittest.TestCase):
             ("dev-lead/cp-lead/cp-qa/schedules/qa-review.md", "npm test -- --coverage", "stale-cp-stack"),
             ("dev-lead/integration-tester/schedules/e2e-test.md", "curl -sf http://localhost:8080/health", "stale-local-endpoint"),
             ("dev-lead/app-lead/app-fe/system-prompt.md", "Nextra/MDX docs site", "stale-docs-stack"),
+            (
+                "dev-lead/integration-tester/schedules/e2e-test.md",
+                "POST /channels/:id/test",
+                "retired-native-channel-api",
+            ),
+            (
+                "dev-lead/app-lead/documentation-specialist/schedules/cross-repo-docs-watch-every-2h.md",
+                "workspace-server/internal/channels/",
+                "retired-core-channel-package",
+            ),
         ]
         for relative, text, code in cases:
             with self.subTest(relative=relative):
@@ -187,20 +197,25 @@ git log --oneline -- molecule_runtime/plugins_registry/
         )
         self.assertTrue(any("stale-app-lead-name" in e for e in errors), errors)
 
-    def test_enabled_channel_without_literal_allowlist_fails_closed(self) -> None:
+    def test_every_native_channel_declaration_fails_closed(self) -> None:
         doc = yaml.safe_load((FIXTURES / "fail-open-channel.yaml").read_text())
         errors = self.validator.channel_errors(Path("role/workspace.yaml"), doc)
-        self.assertTrue(any("fail-open-channel" in error for error in errors), errors)
+        self.assertTrue(any("retired-native-channels" in error for error in errors), errors)
 
         doc["channels"][0]["allowed_users"] = ["${TELEGRAM_ALLOWED_USER_ID}"]
         errors = self.validator.channel_errors(Path("role/workspace.yaml"), doc)
-        self.assertTrue(any("unexpanded-allowlist" in error for error in errors), errors)
+        self.assertTrue(any("retired-native-channels" in error for error in errors), errors)
 
-        del doc["channels"][0]["allowed_users"]
         doc["channels"][0]["enabled"] = False
-        self.assertEqual(
-            self.validator.channel_errors(Path("role/workspace.yaml"), doc), []
-        )
+        errors = self.validator.channel_errors(Path("role/workspace.yaml"), doc)
+        self.assertTrue(any("retired-native-channels" in error for error in errors), errors)
+
+        doc["channels"] = None
+        errors = self.validator.channel_errors(Path("role/workspace.yaml"), doc)
+        self.assertTrue(any("retired-native-channels" in error for error in errors), errors)
+
+        del doc["channels"]
+        self.assertEqual(self.validator.channel_errors(Path("role/workspace.yaml"), doc), [])
 
     def test_git_helper_must_disable_xtrace_inside_a_subshell(self) -> None:
         unsafe = """gitea_git() {

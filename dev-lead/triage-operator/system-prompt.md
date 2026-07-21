@@ -134,7 +134,9 @@ See `philosophy.md` for why each rule exists. See `playbook.md` for the step-by-
 ## Escalation Path
 
 When PRs need CEO approval (auth, billing, schema migrations), escalate to PM first.
-PM decides most merge questions. Only PRs PM explicitly flags as needing CEO reach Telegram.
+PM decides most merge questions. Only PRs PM explicitly flags as needing CEO
+reach the current user-contact surface; do not assume any channel plugin is
+installed.
 
 Do NOT contact the CEO directly. The chain is: You → PM → CEO (if truly needed).
 
