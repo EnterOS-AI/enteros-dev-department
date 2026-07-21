@@ -319,16 +319,43 @@ def shared_rules_errors(text: str) -> list[str]:
     return errors
 
 
-def channel_errors(relative: Path, document: Any) -> list[str]:
-    """Reject the retired native channel field, including disabled entries."""
+def _retired_channel_paths(
+    node: Any,
+    path: tuple[str, ...] = (),
+    *,
+    allow_category_routing_key: bool = False,
+) -> list[tuple[str, ...]]:
+    """Find native ``channels`` fields without inspecting or printing values."""
 
-    if not isinstance(document, dict):
-        return []
-    if "channels" not in document:
-        return []
+    findings: list[tuple[str, ...]] = []
+    if isinstance(node, dict):
+        for raw_key, value in node.items():
+            key = str(raw_key)
+            child_path = (*path, key)
+            if key == "channels" and not allow_category_routing_key:
+                findings.append(child_path)
+            findings.extend(
+                _retired_channel_paths(
+                    value,
+                    child_path,
+                    allow_category_routing_key=key == "category_routing",
+                )
+            )
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            findings.extend(
+                _retired_channel_paths(value, (*path, f"[{index}]"))
+            )
+    return findings
+
+
+def channel_errors(relative: Path, document: Any) -> list[str]:
+    """Reject retired native channel fields at every template nesting level."""
+
     return [
-        f"{relative}:channels: [retired-native-channels] configure an SDK channel "
-        "plugin outside the org template"
+        f"{relative}:{'.'.join(path)}: [retired-native-channels] configure an "
+        "SDK channel plugin outside the org template"
+        for path in _retired_channel_paths(document)
     ]
 
 
@@ -438,6 +465,7 @@ def validate_repository(root: Path = DEFAULT_ROOT) -> list[str]:
     errors.extend(workspace_errors)
 
     manifest = _load_yaml(root / "dev-department.yaml")
+    errors.extend(channel_errors(Path("dev-department.yaml"), manifest))
     if isinstance(manifest, dict):
         defaults = manifest.get("defaults", {})
         routing = defaults.get("category_routing") if isinstance(defaults, dict) else None
