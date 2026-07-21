@@ -4,6 +4,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import yaml
 
@@ -197,7 +198,7 @@ git log --oneline -- molecule_runtime/plugins_registry/
         )
         self.assertTrue(any("stale-app-lead-name" in e for e in errors), errors)
 
-    def test_every_native_channel_declaration_fails_closed(self) -> None:
+    def test_every_native_channel_declaration_fails_closed_recursively(self) -> None:
         doc = yaml.safe_load((FIXTURES / "fail-open-channel.yaml").read_text())
         errors = self.validator.channel_errors(Path("role/workspace.yaml"), doc)
         self.assertTrue(any("retired-native-channels" in error for error in errors), errors)
@@ -216,6 +217,50 @@ git log --oneline -- molecule_runtime/plugins_registry/
 
         del doc["channels"]
         self.assertEqual(self.validator.channel_errors(Path("role/workspace.yaml"), doc), [])
+
+        for nested in (
+            {"defaults": {"channels": []}},
+            {"children": [{"name": "child", "channels": None}]},
+            {"workspaces": [{"name": "worker", "children": [{"channels": []}]}]},
+        ):
+            with self.subTest(document=nested):
+                errors = self.validator.channel_errors(
+                    Path("dev-department.yaml"), nested
+                )
+                self.assertTrue(
+                    any("retired-native-channels" in error for error in errors),
+                    errors,
+                )
+
+        category_routing = {
+            "defaults": {"category_routing": {"channels": ["Infra-SRE"]}}
+        }
+        self.assertEqual(
+            self.validator.channel_errors(
+                Path("dev-department.yaml"), category_routing
+            ),
+            [],
+        )
+
+    def test_repository_validation_scans_the_department_manifest(self) -> None:
+        load_yaml = self.validator._load_yaml
+
+        def inject_retired_root(path: Path):
+            document = load_yaml(path)
+            if path.name == "dev-department.yaml":
+                document = {**document, "channels": []}
+            return document
+
+        with mock.patch.object(
+            self.validator, "_load_yaml", side_effect=inject_retired_root
+        ):
+            errors = self.validator.validate_repository(REPO_ROOT)
+
+        self.assertIn(
+            "dev-department.yaml:channels: [retired-native-channels] configure an "
+            "SDK channel plugin outside the org template",
+            errors,
+        )
 
     def test_git_helper_must_disable_xtrace_inside_a_subshell(self) -> None:
         unsafe = """gitea_git() {
