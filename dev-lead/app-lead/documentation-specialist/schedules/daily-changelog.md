@@ -58,7 +58,6 @@ example, `content/docs/changelog/2026-07.mdx`). Use newest date first:
 ## 2026-04-16
 
 ### 🚀 New features
-- **molecule-core**: Lark / Feishu channel adapter ([#480](https://git.moleculesai.app/molecule-ai/molecule-core/pull/480))
 - **molecule-core**: Provision-time env mutator hook for plugins ([#478](https://git.moleculesai.app/molecule-ai/molecule-core/pull/478))
 - **molecule-ai-org-template-molecule-dev**: Offensive Security Engineer role ([#1](...))
 

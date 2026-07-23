@@ -12,7 +12,9 @@ STEP 1 — TEAM OUTPUT CHECK (do NOT delegate — just observe):
   Check: are they opening PRs? If no new PRs from a role in 2h, note idle.
 
 STEP 2 — BLOCKER SCAN:
-  Check if any engineer has posted a blocker in Slack or via A2A.
+  Check if any engineer has posted a blocker via A2A or, when one is actually
+  installed, through an external channel plugin. Do not assume a provider
+  plugin is available.
   Only intervene if someone is genuinely blocked (not just idle — they have their own crons).
 
 STEP 3 — CROSS-TEAM DEPENDENCY:

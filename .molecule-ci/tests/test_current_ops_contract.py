@@ -74,6 +74,21 @@ class CurrentOperationsContractTests(unittest.TestCase):
                 errors = self.validator.instruction_errors(Path(relative), text)
                 self.assertTrue(any(code in error for error in errors), errors)
 
+    def test_provider_specific_channel_assumptions_are_rejected(self) -> None:
+        for provider in ("Slack", "Lark", "Feishu", "Discord", "Telegram"):
+            with self.subTest(provider=provider):
+                errors = self.validator.instruction_errors(
+                    Path("dev-lead/example/schedules/status.md"),
+                    f"Post the status through {provider}.",
+                )
+                self.assertTrue(
+                    any(
+                        "provider-specific-channel-instruction" in error
+                        for error in errors
+                    ),
+                    errors,
+                )
+
     def test_single_page_org_inventory_is_rejected(self) -> None:
         errors = self.validator.instruction_errors(
             Path("dev-lead/example/system-prompt.md"),

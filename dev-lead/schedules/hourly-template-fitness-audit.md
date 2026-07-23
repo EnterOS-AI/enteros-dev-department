@@ -38,11 +38,12 @@ a parent template bumps its pinned `!external` reference.
    responsibility described by that workspace. Do not invent a missing plugin
    solely from a role name.
 
-5. CHECK CHANNEL SHAPE:
-   Each channel may use only `type`, `config`, `allowed_users`, and `enabled`.
-   Confirm `${VAR}` references live under `config` and that the corresponding
-   exact values are bound from Infisical. Category routing belongs in the
-   organization/defaults config, not on channel entries.
+5. CHECK CHANNEL PLUGIN BOUNDARY:
+   Confirm the template contains no native `channels:` field, provider-specific
+   configuration, or channel-provider credentials. Provider integration belongs
+   in a separately installed SDK channel plugin and is unavailable when no such
+   plugin is installed. `category_routing.channels` remains an ordinary
+   business-routing category, not channel-provider configuration.
 
 6. ROUTING:
    Delegate an evidence-backed summary to PM with audit_summary metadata

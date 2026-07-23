@@ -62,12 +62,13 @@ For each merged PR, check `files`:
 ## 4. WRITE THE DOCS PR
 
 For each docs gap discovered:
-1. Branch in the docs site repo: `docs/<short-topic>-from-pr-<repo>-<number>` (e.g. `docs/lark-channel-from-core-480`)
+1. Branch in the docs site repo: `docs/<short-topic>-from-pr-<repo>-<number>`
+   (for example, `docs/channel-contract-from-sdk-120`)
 2. Edit the relevant MDX file. Include:
    - 1-paragraph what-changed prose
    - The new/changed config syntax in a fenced code block
    - A working example
-   - Cross-link to the PR that introduced it (`See [#480](...)` etc.)
+   - Cross-link to the PR that introduced it (`See [#120](...)` etc.)
 3. Run `npm run build` locally (the docs site is a Next.js app — link checker + MDX parse run during build). Skip the PR if build fails; fix the docs first.
 4. Open PR with title `docs(<area>): pair PR <repo>#<n> — <topic>` and body referencing the originating PR. **Always branch + PR — never commit to main on any repo.**
 
