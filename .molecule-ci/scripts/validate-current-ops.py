@@ -103,6 +103,10 @@ def instruction_errors(relative: Path, text: str) -> list[str]:
             "retired-core-channel-package",
             re.compile(r"\bworkspace-server/internal/channels(?:/|\b)"),
         ),
+        (
+            "provider-specific-channel-instruction",
+            re.compile(r"\b(?:Slack|Lark|Feishu|Discord|Telegram)\b", re.IGNORECASE),
+        ),
         ("stale-docs-stack", re.compile(r"\bNextra\b", re.IGNORECASE)),
         (
             "unpaginated-org-inventory",

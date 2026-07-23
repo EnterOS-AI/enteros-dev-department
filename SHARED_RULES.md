@@ -305,20 +305,22 @@ If you see a Gitea API 401 or `git: authentication failed`:
 3. Retry after the platform refreshes that binding, or escalate once to the
    owning lead with the evidence. Do not ask another agent for a PAT.
 
-## Slack Noise Discipline
+## External Channel Noise Discipline
 
-Before posting to a Slack channel:
+Before posting through an installed external channel plugin:
 
+- If no plugin and destination are configured, use A2A; do not assume a
+  provider connection exists
 - Search the last 30 messages — if your message duplicates anything posted in the last 4 hours, **don't post**
-- For `#ops`: only post when something is actually broken AND you have a fix attempt to report
-- For `#ceo-feed`: only post when CEO input is genuinely required AND no one else has asked recently
-- For `#engineering`: status posts are fine, but don't repeat "idle, clean" every cycle — once per shift is enough
+- For the operations destination: only post when something is actually broken AND you have a fix attempt to report
+- For the CEO feed: only post when CEO input is genuinely required AND no one else has asked recently
+- For the engineering destination: status posts are fine, but don't repeat "idle, clean" every cycle — once per shift is enough
 
 The 24h log shows multiple "PM not responding to DMs" escalations within minutes of each other. PM was not unresponsive — PM was working.
 
 ## Identity Tag Every External Comment
 
-Every Gitea PR description, issue body, comment, and Slack message MUST start with `[<your-role>-agent]` on the first line (e.g., `[core-lead-agent]`, `[plugin-dev-agent]`).
+Every Gitea PR description, issue body, comment, and external-channel message MUST start with `[<your-role>-agent]` on the first line (e.g., `[core-lead-agent]`, `[plugin-dev-agent]`).
 
 Tags are now ALSO mechanically required for PR approval gates. The PR Merge Approval Gate accepts only the delivered reviewer tags named below; bare or invented role tags are rejected. Each persona has its own Gitea identity (post-2026-05-06; see `feedback_per_agent_gitea_identity_default`), so the tag reflects who actually authored the comment — and the gate enforces that the right roles spoke.
 
@@ -381,7 +383,8 @@ Examples:
 
 If you find yourself wanting a secret you don't have, STOP. Either your role isn't supposed to do that action (escalate per the ladder below), or the matrix is wrong (file an issue tagged `area:secrets-matrix`).
 
-Never paste secrets into Slack, Gitea comments, PR bodies, issue bodies, or memory commits.
+Never paste secrets into external channels, Gitea comments, PR bodies, issue
+bodies, or memory commits.
 
 ## Decision Escalation Ladder
 
@@ -418,7 +421,7 @@ If your last 3 cycles all reported "no work, no claims, no escalations":
 
 - Track `idle-streak` count in memory
 - After 6+ consecutive quiet cycles, post a single `[<role>-agent] HEARTBEAT-IDLE-LONG` once per shift to your channel and back off
-- Don't post the same "idle, clean" message every 5 minutes (Slack Noise Discipline above)
+- Don't post the same "idle, clean" message every 5 minutes (External Channel Noise Discipline above)
 
 When the queue refills, you'll be woken by the next A2A delegation or cron tick — no need to spin.
 
